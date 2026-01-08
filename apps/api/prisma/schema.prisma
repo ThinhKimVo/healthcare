@@ -1,0 +1,581 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  USER
+  THERAPIST
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  SUSPENDED
+}
+
+enum TherapistVerificationStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentType {
+  SCHEDULED
+  INSTANT
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION
+  APPOINTMENT_REMINDER
+  PAYMENT_RECEIPT
+  THERAPIST_MESSAGE
+  MARKETING
+  SYSTEM
+}
+
+enum LanguageProficiency {
+  NATIVE
+  FLUENT
+  CONVERSATIONAL
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+model User {
+  id                String     @id @default(cuid())
+  email             String     @unique
+  phone             String?    @unique
+  passwordHash      String?
+  role              UserRole   @default(USER)
+  status            UserStatus @default(ACTIVE)
+  emailVerified     Boolean    @default(false)
+  phoneVerified     Boolean    @default(false)
+  biometricEnabled  Boolean    @default(false)
+
+  // Profile
+  firstName         String?
+  lastName          String?
+  displayName       String?
+  avatarUrl         String?
+  bio               String?
+  timezone          String     @default("UTC")
+  preferredLanguage String     @default("en")
+
+  // Social auth
+  googleId          String?    @unique
+  appleId           String?    @unique
+
+  // Timestamps
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  lastLoginAt       DateTime?
+
+  // Relations
+  therapist         Therapist?
+  appointments      Appointment[]       @relation("UserAppointments")
+  paymentMethods    PaymentMethod[]
+  payments          Payment[]
+  reviews           Review[]
+  notifications     Notification[]
+  deviceTokens      DeviceToken[]
+  otpCodes          OtpCode[]
+  passwordHistory   PasswordHistory[]
+  sessions          UserSession[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+  @@index([status])
+}
+
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  deviceInfo   String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String
+  type      String   // SMS, EMAIL
+  purpose   String   // VERIFICATION, PASSWORD_RESET
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([code])
+}
+
+model PasswordHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   // IOS, ANDROID
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================
+// THERAPIST
+// ============================================
+
+model Therapist {
+  id                    String                      @id @default(cuid())
+  userId                String                      @unique
+  user                  User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Professional info
+  professionalTitle     String?
+  yearsOfExperience     Int?
+  city                  String?
+  state                 String?
+  country               String?
+
+  // Verification
+  verificationStatus    TherapistVerificationStatus @default(PENDING_REVIEW)
+  verificationNotes     String?
+  verifiedAt            DateTime?
+  rejectionReason       String?
+
+  // Availability
+  isOnline              Boolean                     @default(false)
+  autoOfflineTime       String?                     // e.g., "22:00"
+
+  // Pricing (in cents)
+  hourlyRate            Int?
+  perMinuteRate         Int?
+  thirtyMinRate         Int?
+  sixtyMinRate          Int?
+  ninetyMinRate         Int?
+
+  // Stats
+  totalBookings         Int                         @default(0)
+  totalEarnings         Int                         @default(0)
+  averageRating         Float                       @default(0)
+  totalReviews          Int                         @default(0)
+  cancellationRate      Float                       @default(0)
+
+  // Timestamps
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+
+  // Relations
+  languages             TherapistLanguage[]
+  specializations       TherapistSpecialization[]
+  licenses              TherapistLicense[]
+  availabilities        TherapistAvailability[]
+  blockedSlots          TherapistBlockedSlot[]
+  appointments          Appointment[]               @relation("TherapistAppointments")
+  reviews               Review[]
+  payoutSettings        PayoutSettings?
+  payouts               Payout[]
+
+  @@index([verificationStatus])
+  @@index([isOnline])
+  @@index([averageRating])
+}
+
+model TherapistLanguage {
+  id          String              @id @default(cuid())
+  therapistId String
+  therapist   Therapist           @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  language    String
+  proficiency LanguageProficiency
+  createdAt   DateTime            @default(now())
+
+  @@unique([therapistId, language])
+  @@index([language])
+}
+
+model TherapistSpecialization {
+  id               String        @id @default(cuid())
+  therapistId      String
+  therapist        Therapist     @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  specializationId String
+  specialization   Specialization @relation(fields: [specializationId], references: [id])
+  createdAt        DateTime      @default(now())
+
+  @@unique([therapistId, specializationId])
+}
+
+model Specialization {
+  id          String                    @id @default(cuid())
+  name        String                    @unique
+  description String?
+  icon        String?
+  isActive    Boolean                   @default(true)
+  sortOrder   Int                       @default(0)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  therapists  TherapistSpecialization[]
+
+  @@index([isActive])
+}
+
+model TherapistLicense {
+  id              String    @id @default(cuid())
+  therapistId     String
+  therapist       Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  licenseNumber   String
+  issuingAuthority String
+  documentUrl     String
+  expiryDate      DateTime?
+  verified        Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([therapistId])
+}
+
+model TherapistAvailability {
+  id          String    @id @default(cuid())
+  therapistId String
+  therapist   Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int       // 0-6 (Sunday-Saturday)
+  startTime   String    // "09:00"
+  endTime     String    // "17:00"
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([therapistId, dayOfWeek, startTime])
+  @@index([therapistId])
+}
+
+model TherapistBlockedSlot {
+  id          String    @id @default(cuid())
+  therapistId String
+  therapist   Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  isRecurring Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([therapistId])
+  @@index([startDate, endDate])
+}
+
+// ============================================
+// APPOINTMENTS
+// ============================================
+
+model Appointment {
+  id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation("UserAppointments", fields: [userId], references: [id])
+  therapistId     String
+  therapist       Therapist         @relation("TherapistAppointments", fields: [therapistId], references: [id])
+
+  // Schedule
+  scheduledAt     DateTime
+  duration        Int               // minutes
+  timezone        String
+
+  // Type & Status
+  type            AppointmentType   @default(SCHEDULED)
+  status          AppointmentStatus @default(PENDING)
+
+  // Session
+  sessionRoomId   String?
+  sessionStartedAt DateTime?
+  sessionEndedAt  DateTime?
+  actualDuration  Int?              // minutes
+
+  // Notes
+  bookingNotes    String?
+  sessionNotes    String?           // Therapist's private notes
+  cancellationReason String?
+
+  // Pricing (in cents)
+  amount          Int
+
+  // Timestamps
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  payment         Payment?
+  review          Review?
+  reminders       AppointmentReminder[]
+
+  @@index([userId])
+  @@index([therapistId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([type])
+}
+
+model AppointmentReminder {
+  id            String      @id @default(cuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  reminderType  String      // 24H, 1H, 15MIN
+  sentAt        DateTime?
+  scheduledFor  DateTime
+  createdAt     DateTime    @default(now())
+
+  @@index([appointmentId])
+  @@index([scheduledFor])
+}
+
+// ============================================
+// PAYMENTS
+// ============================================
+
+model PaymentMethod {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripePaymentMethodId String @unique
+  type            String    // CARD, APPLE_PAY, GOOGLE_PAY, PAYPAL
+  brand           String?   // VISA, MASTERCARD, etc.
+  last4           String?
+  expiryMonth     Int?
+  expiryYear      Int?
+  isDefault       Boolean   @default(false)
+  isVerified      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  appointmentId     String?       @unique
+  appointment       Appointment?  @relation(fields: [appointmentId], references: [id])
+
+  // Stripe
+  stripePaymentIntentId String?   @unique
+  stripeChargeId    String?
+
+  // Amounts (in cents)
+  amount            Int
+  platformFee       Int           @default(0)
+  therapistAmount   Int           @default(0)
+  refundedAmount    Int           @default(0)
+  currency          String        @default("USD")
+
+  // Status
+  status            PaymentStatus @default(PENDING)
+
+  // Metadata
+  description       String?
+  receiptUrl        String?
+
+  // Timestamps
+  paidAt            DateTime?
+  refundedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+}
+
+model PayoutSettings {
+  id              String    @id @default(cuid())
+  therapistId     String    @unique
+  therapist       Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  stripeAccountId String?
+  accountVerified Boolean   @default(false)
+  payoutSchedule  String    @default("WEEKLY") // WEEKLY, BIWEEKLY, MONTHLY
+  minimumPayout   Int       @default(5000) // $50 in cents
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Payout {
+  id              String       @id @default(cuid())
+  therapistId     String
+  therapist       Therapist    @relation(fields: [therapistId], references: [id])
+  amount          Int          // in cents
+  currency        String       @default("USD")
+  status          PayoutStatus @default(PENDING)
+  stripePayoutId  String?
+  scheduledFor    DateTime?
+  processedAt     DateTime?
+  failureReason   String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([therapistId])
+  @@index([status])
+}
+
+// ============================================
+// REVIEWS & FEEDBACK
+// ============================================
+
+model Review {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  therapistId   String
+  therapist     Therapist   @relation(fields: [therapistId], references: [id])
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  rating        Int         // 1-5
+  feedback      String?
+  tags          String[]    // ["Professional", "Helpful", "Good listener"]
+  isAnonymous   Boolean     @default(false)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([therapistId])
+  @@index([rating])
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?            // Deep link data
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// ============================================
+// ADMIN & SUPPORT
+// ============================================
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  userId      String?
+  email       String
+  name        String
+  subject     String
+  message     String
+  attachmentUrl String?
+  status      String   @default("NEW") // NEW, IN_PROGRESS, RESOLVED
+  priority    String   @default("NORMAL") // LOW, NORMAL, HIGH
+  assignedTo  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      String   @default("STRING") // STRING, NUMBER, JSON, BOOLEAN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Content {
+  id        String   @id @default(cuid())
+  slug      String   @unique // privacy-policy, terms-conditions, faq
+  title     String
+  content   String
+  version   Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  entityType  String
+  entityId    String?
+  oldValue    Json?
+  newValue    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+}

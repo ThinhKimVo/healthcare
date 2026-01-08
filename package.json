@@ -1,0 +1,29 @@
+{
+  "name": "hopefull",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Telehealth therapy platform - connecting users with licensed therapists",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:generate": "turbo run db:generate --filter=@hopefull/api",
+    "db:push": "turbo run db:push --filter=@hopefull/api",
+    "db:migrate": "turbo run db:migrate --filter=@hopefull/api",
+    "db:studio": "pnpm --filter @hopefull/api db:studio",
+    "api:dev": "pnpm --filter @hopefull/api dev",
+    "mobile:dev": "pnpm --filter @hopefull/mobile dev",
+    "admin:dev": "pnpm --filter @hopefull/admin dev",
+    "web:dev": "pnpm --filter @hopefull/web dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
