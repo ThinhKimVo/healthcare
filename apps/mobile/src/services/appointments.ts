@@ -8,6 +8,7 @@ export interface CreateAppointmentData {
   timezone: string;
   amount: number;
   bookingNotes?: string;
+  paymentMethodId?: string;
 }
 
 export interface CreateReviewData {
