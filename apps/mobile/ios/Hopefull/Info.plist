@@ -4,6 +4,8 @@
   <dict>
     <key>CADisableMinimumFrameDurationOnPhone</key>
     <true/>
+    <key>CFBundleAllowMixedLocalizations</key>
+    <true/>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
@@ -34,7 +36,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.googleusercontent.apps.208742036545-ho3p7e0f5ul1a9pp7kc2c0</string>
+          <string>com.googleusercontent.apps.208742036545-1abtltlb6llon3c4vap3fagpcfmcnvlq</string>
         </array>
       </dict>
     </array>
