@@ -216,6 +216,12 @@
       "availability": "Lịch Trống",
       "bookAppointment": "Đặt Lịch Hẹn"
     },
+    "availability": {
+      "timezoneNote": "Giờ hiển thị theo múi giờ của bạn ({{timezone}})",
+      "selectDateHint": "Chọn ngày để xem các khung giờ trống",
+      "availableTimesFor": "Khung Giờ Trống Cho {{date}}",
+      "noSlotsAvailable": "Không có khung giờ trống cho ngày này"
+    },
     "noResults": "Không tìm thấy chuyên gia",
     "tryDifferentFilters": "Thử điều chỉnh bộ lọc"
   },

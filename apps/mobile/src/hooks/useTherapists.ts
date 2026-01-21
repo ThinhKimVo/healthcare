@@ -33,6 +33,14 @@ export function useTherapistAvailability(id: string, date: string) {
   });
 }
 
+export function useTherapistAvailabilitySummary(id: string, month: string) {
+  return useQuery({
+    queryKey: ['therapist-availability-summary', id, month],
+    queryFn: () => therapistsService.getAvailabilitySummary(id, month),
+    enabled: !!id && !!month,
+  });
+}
+
 export function useTherapistReviews(id: string, page = 1, limit = 10) {
   return useQuery({
     queryKey: ['therapist-reviews', id, page, limit],

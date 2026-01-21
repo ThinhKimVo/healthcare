@@ -217,6 +217,12 @@
       "availability": "Availability",
       "bookAppointment": "Book Appointment"
     },
+    "availability": {
+      "timezoneNote": "Times shown in your timezone ({{timezone}})",
+      "selectDateHint": "Select a date to see available times",
+      "availableTimesFor": "Available Times for {{date}}",
+      "noSlotsAvailable": "No available slots for this date"
+    },
     "noResults": "No therapists found",
     "tryDifferentFilters": "Try adjusting your filters"
   },

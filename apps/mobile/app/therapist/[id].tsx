@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,25 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTherapist, useTherapistReviews } from '@/hooks';
+import { useTherapist, useTherapistReviews, useTherapistAvailability, useTherapistAvailabilitySummary } from '@/hooks';
 import { Avatar, Badge, Rating, Card, Button, EmptyState } from '@/components/ui';
+import { Calendar } from '@/components/calendar';
 
 const { width } = Dimensions.get('window');
 
 export default function TherapistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState<'about' | 'reviews'>('about');
+  const [activeTab, setActiveTab] = useState<'about' | 'availability' | 'reviews'>('about');
+
+  // Calendar state
+  const today = useMemo(() => new Date(), []);
+  const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
+  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const currentMonth = useMemo(() => {
+    return `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
+  }, [calendarMonth, calendarYear]);
 
   const { data: therapist, isLoading } = useTherapist(id || '');
   const { data: reviewsData, isLoading: reviewsLoading } = useTherapistReviews(
@@ -25,6 +36,54 @@ export default function TherapistDetailScreen() {
     1,
     10
   );
+
+  const { data: availabilitySummary, isLoading: availabilitySummaryLoading } =
+    useTherapistAvailabilitySummary(id || '', currentMonth);
+
+  const { data: dayAvailability, isLoading: dayAvailabilityLoading } =
+    useTherapistAvailability(id || '', selectedDate || '');
+
+  // Get user timezone
+  const userTimezone = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return 'UTC';
+    }
+  }, []);
+
+  const handlePrevMonth = () => {
+    if (calendarMonth === 0) {
+      setCalendarMonth(11);
+      setCalendarYear(calendarYear - 1);
+    } else {
+      setCalendarMonth(calendarMonth - 1);
+    }
+    setSelectedDate(null);
+  };
+
+  const handleNextMonth = () => {
+    if (calendarMonth === 11) {
+      setCalendarMonth(0);
+      setCalendarYear(calendarYear + 1);
+    } else {
+      setCalendarMonth(calendarMonth + 1);
+    }
+    setSelectedDate(null);
+  };
+
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+  };
+
+  const handleSlotPress = (startTime: string) => {
+    if (selectedDate) {
+      router.push({
+        pathname: '/book/[id]',
+        params: { id, date: selectedDate, time: startTime },
+      } as any);
+    }
+  };
 
   if (isLoading || !therapist) {
     return (
@@ -95,6 +154,73 @@ export default function TherapistDetailScreen() {
           {therapist.yearsOfExperience} years of experience
         </Text>
       </View>
+    </View>
+  );
+
+  const renderAvailability = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.timezoneBanner}>
+        <Ionicons name="time-outline" size={16} color="#6B7280" />
+        <Text style={styles.timezoneText}>
+          Times shown in your timezone ({userTimezone})
+        </Text>
+      </View>
+
+      {availabilitySummaryLoading ? (
+        <View style={styles.calendarLoading}>
+          <ActivityIndicator size="large" color="#4F46E5" />
+        </View>
+      ) : (
+        <Calendar
+          month={calendarMonth}
+          year={calendarYear}
+          selectedDate={selectedDate}
+          availabilityData={availabilitySummary?.dates || []}
+          onDateSelect={handleDateSelect}
+          onPrevMonth={handlePrevMonth}
+          onNextMonth={handleNextMonth}
+        />
+      )}
+
+      {selectedDate && (
+        <View style={styles.slotsSection}>
+          <Text style={styles.slotsTitle}>
+            Available Times for {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </Text>
+
+          {dayAvailabilityLoading ? (
+            <ActivityIndicator size="small" color="#4F46E5" style={styles.slotsLoading} />
+          ) : dayAvailability?.slots && dayAvailability.slots.length > 0 ? (
+            <View style={styles.slotsGrid}>
+              {dayAvailability.slots.map((slot, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.slotButton}
+                  onPress={() => handleSlotPress(slot.startTime)}
+                >
+                  <Text style={styles.slotText}>{slot.startTime}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.noSlotsContainer}>
+              <Ionicons name="calendar-outline" size={32} color="#9CA3AF" />
+              <Text style={styles.noSlotsText}>No available slots for this date</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {!selectedDate && (
+        <View style={styles.selectDateHint}>
+          <Ionicons name="hand-left-outline" size={24} color="#9CA3AF" />
+          <Text style={styles.selectDateText}>Select a date to see available times</Text>
+        </View>
+      )}
     </View>
   );
 
@@ -231,6 +357,16 @@ export default function TherapistDetailScreen() {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
+            style={[styles.tab, activeTab === 'availability' && styles.tabActive]}
+            onPress={() => setActiveTab('availability')}
+          >
+            <Text
+              style={[styles.tabText, activeTab === 'availability' && styles.tabTextActive]}
+            >
+              Availability
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'reviews' && styles.tabActive]}
             onPress={() => setActiveTab('reviews')}
           >
@@ -242,7 +378,9 @@ export default function TherapistDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {activeTab === 'about' ? renderAbout() : renderReviews()}
+        {activeTab === 'about' && renderAbout()}
+        {activeTab === 'availability' && renderAvailability()}
+        {activeTab === 'reviews' && renderReviews()}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -510,5 +648,74 @@ const styles = StyleSheet.create({
   },
   bookButton: {
     flex: 2,
+  },
+  // Availability tab styles
+  timezoneBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F9FAFB',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  timezoneText: {
+    fontSize: 13,
+    color: '#6B7280',
+    flex: 1,
+  },
+  calendarLoading: {
+    height: 300,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotsSection: {
+    marginTop: 24,
+  },
+  slotsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  slotsLoading: {
+    marginVertical: 24,
+  },
+  slotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  slotButton: {
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  slotText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  noSlotsContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    gap: 8,
+  },
+  noSlotsText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  selectDateHint: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    gap: 12,
+  },
+  selectDateText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
 });

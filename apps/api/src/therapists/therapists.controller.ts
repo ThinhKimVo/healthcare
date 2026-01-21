@@ -79,6 +79,16 @@ export class TherapistsController {
     return this.therapistsService.getAvailableSlots(id, date);
   }
 
+  @Get(':id/availability/summary')
+  @ApiOperation({ summary: 'Get monthly availability summary for a therapist' })
+  @ApiQuery({ name: 'month', required: true, description: 'Month in YYYY-MM format' })
+  async getAvailabilitySummary(
+    @Param('id') id: string,
+    @Query('month') month: string,
+  ) {
+    return this.therapistsService.getAvailabilitySummary(id, month);
+  }
+
   @Get(':id/reviews')
   @ApiOperation({ summary: 'Get reviews for a therapist' })
   async getReviews(

@@ -65,6 +65,19 @@ export interface TimeSlot {
   endTime: string;
 }
 
+// Availability summary for calendar view
+export interface AvailabilitySummary {
+  month: string;
+  therapistTimezone: string;
+  dates: AvailabilitySummaryDate[];
+}
+
+export interface AvailabilitySummaryDate {
+  date: string;
+  availableSlots: number;
+  hasSlots: boolean;
+}
+
 // Appointment types
 export interface Appointment {
   id: string;

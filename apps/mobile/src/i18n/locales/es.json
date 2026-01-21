@@ -216,6 +216,12 @@
       "availability": "Disponibilidad",
       "bookAppointment": "Reservar Cita"
     },
+    "availability": {
+      "timezoneNote": "Horarios mostrados en tu zona horaria ({{timezone}})",
+      "selectDateHint": "Selecciona una fecha para ver horarios disponibles",
+      "availableTimesFor": "Horarios Disponibles para {{date}}",
+      "noSlotsAvailable": "No hay horarios disponibles para esta fecha"
+    },
     "noResults": "No se encontraron terapeutas",
     "tryDifferentFilters": "Intenta ajustar tus filtros"
   },

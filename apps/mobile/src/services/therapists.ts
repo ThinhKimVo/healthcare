@@ -3,6 +3,7 @@ import type {
   Therapist,
   TherapistFilters,
   TherapistAvailability,
+  AvailabilitySummary,
   Review,
   PaginatedResponse,
 } from '../types';
@@ -30,6 +31,11 @@ export const therapistsService = {
 
   async getAvailability(id: string, date: string): Promise<TherapistAvailability> {
     const { data } = await api.get(`/therapists/${id}/availability?date=${date}`);
+    return data;
+  },
+
+  async getAvailabilitySummary(id: string, month: string): Promise<AvailabilitySummary> {
+    const { data } = await api.get(`/therapists/${id}/availability/summary?month=${month}`);
     return data;
   },
 

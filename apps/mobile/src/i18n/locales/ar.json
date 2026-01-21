@@ -216,6 +216,12 @@
       "availability": "التوفر",
       "bookAppointment": "حجز موعد"
     },
+    "availability": {
+      "timezoneNote": "الأوقات معروضة بمنطقتك الزمنية ({{timezone}})",
+      "selectDateHint": "اختر تاريخاً لرؤية الأوقات المتاحة",
+      "availableTimesFor": "الأوقات المتاحة ليوم {{date}}",
+      "noSlotsAvailable": "لا توجد أوقات متاحة لهذا التاريخ"
+    },
     "noResults": "لم يتم العثور على معالجين",
     "tryDifferentFilters": "جرب تعديل الفلاتر"
   },

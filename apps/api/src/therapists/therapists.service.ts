@@ -319,4 +319,119 @@ export class TherapistsService {
       },
     };
   }
+
+  async getAvailabilitySummary(therapistId: string, month: string) {
+    const therapist = await this.prisma.therapist.findUnique({
+      where: { id: therapistId },
+      include: {
+        availabilities: { where: { isActive: true } },
+        blockedSlots: true,
+      },
+    });
+
+    if (!therapist) {
+      throw new NotFoundException('Therapist not found');
+    }
+
+    // Parse the month (YYYY-MM format)
+    const [year, monthNum] = month.split('-').map(Number);
+    const startDate = new Date(year, monthNum - 1, 1);
+    const endDate = new Date(year, monthNum, 0); // Last day of the month
+
+    // Get all appointments for the month
+    const appointments = await this.prisma.appointment.findMany({
+      where: {
+        therapistId,
+        scheduledAt: {
+          gte: startDate,
+          lte: new Date(endDate.getTime() + 24 * 60 * 60 * 1000),
+        },
+        status: { in: ['PENDING', 'CONFIRMED'] },
+      },
+    });
+
+    // Build a map of booked slots by date
+    const bookedSlotsByDate = new Map<string, Set<string>>();
+    for (const appointment of appointments) {
+      const dateStr = appointment.scheduledAt.toISOString().split('T')[0];
+      const timeStr = `${String(appointment.scheduledAt.getHours()).padStart(2, '0')}:${String(appointment.scheduledAt.getMinutes()).padStart(2, '0')}`;
+      if (!bookedSlotsByDate.has(dateStr)) {
+        bookedSlotsByDate.set(dateStr, new Set());
+      }
+      bookedSlotsByDate.get(dateStr)!.add(timeStr);
+    }
+
+    // Generate summary for each day of the month
+    const dates: { date: string; availableSlots: number; hasSlots: boolean }[] = [];
+    const slotDuration = 30; // 30 minutes per slot
+
+    for (let day = 1; day <= endDate.getDate(); day++) {
+      const currentDate = new Date(year, monthNum - 1, day);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const dayOfWeek = currentDate.getDay();
+
+      // Get availabilities for this day of week
+      const dayAvailability = therapist.availabilities.filter(
+        (a) => a.dayOfWeek === dayOfWeek,
+      );
+
+      // Generate all possible slots for this day
+      const allSlots: string[] = [];
+      for (const availability of dayAvailability) {
+        const [startHour, startMin] = availability.startTime.split(':').map(Number);
+        const [endHour, endMin] = availability.endTime.split(':').map(Number);
+
+        let currentHour = startHour;
+        let currentMin = startMin;
+
+        while (
+          currentHour < endHour ||
+          (currentHour === endHour && currentMin < endMin)
+        ) {
+          const startTime = `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
+
+          // Calculate end time of this slot
+          let endSlotMin = currentMin + slotDuration;
+          let endSlotHour = currentHour;
+          if (endSlotMin >= 60) {
+            endSlotMin -= 60;
+            endSlotHour += 1;
+          }
+
+          // Don't add slot if it exceeds the availability end time
+          if (
+            endSlotHour > endHour ||
+            (endSlotHour === endHour && endSlotMin > endMin)
+          ) {
+            break;
+          }
+
+          allSlots.push(startTime);
+
+          // Move to next slot
+          currentMin += slotDuration;
+          if (currentMin >= 60) {
+            currentMin -= 60;
+            currentHour += 1;
+          }
+        }
+      }
+
+      // Count available slots (total minus booked)
+      const bookedSlots = bookedSlotsByDate.get(dateStr) || new Set();
+      const availableSlots = allSlots.filter((slot) => !bookedSlots.has(slot)).length;
+
+      dates.push({
+        date: dateStr,
+        availableSlots,
+        hasSlots: availableSlots > 0,
+      });
+    }
+
+    return {
+      month,
+      therapistTimezone: therapist.timezone,
+      dates,
+    };
+  }
 }
