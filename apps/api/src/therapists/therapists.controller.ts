@@ -136,4 +136,73 @@ export class TherapistsController {
       updateStatusDto.isOnline,
     );
   }
+
+  @Get('me/stats')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get therapist dashboard stats' })
+  async getStats(@Request() req: any) {
+    return this.therapistsService.getTherapistStats(req.user.id);
+  }
+
+  @Get('me/appointments')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get therapist appointments with filters' })
+  @ApiQuery({ name: 'status', required: false, description: 'Filter by status: upcoming, past' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by client name' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  async getAppointments(
+    @Request() req: any,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.therapistsService.getTherapistAppointments(req.user.id, {
+      status,
+      search,
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
+    });
+  }
+
+  @Get('me/appointments/upcoming')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get upcoming appointments (including pending requests)' })
+  @ApiQuery({ name: 'limit', required: false })
+  async getUpcomingAppointments(
+    @Request() req: any,
+    @Query('limit') limit?: string,
+  ) {
+    return this.therapistsService.getUpcomingAppointments(
+      req.user.id,
+      limit ? parseInt(limit) : undefined,
+    );
+  }
+
+  @Patch('me/appointments/:id/accept')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Accept a pending appointment request' })
+  async acceptAppointment(
+    @Request() req: any,
+    @Param('id') appointmentId: string,
+  ) {
+    return this.therapistsService.acceptAppointment(req.user.id, appointmentId);
+  }
+
+  @Patch('me/appointments/:id/decline')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Decline a pending appointment request' })
+  async declineAppointment(
+    @Request() req: any,
+    @Param('id') appointmentId: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.therapistsService.declineAppointment(req.user.id, appointmentId, body.reason);
+  }
 }

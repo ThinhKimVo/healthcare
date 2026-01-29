@@ -66,6 +66,17 @@ export class FirebaseService implements OnModuleInit {
     return this.app ? admin.firestore(this.app) : null;
   }
 
+  get messaging(): admin.messaging.Messaging | null {
+    return this.app ? admin.messaging(this.app) : null;
+  }
+
+  getMessaging(): admin.messaging.Messaging {
+    if (!this.messaging) {
+      throw new Error('Firebase Messaging is not initialized');
+    }
+    return this.messaging;
+  }
+
   /**
    * Upload an avatar image to Firestore
    * @param base64Data Base64 encoded file data (without data:image/... prefix)

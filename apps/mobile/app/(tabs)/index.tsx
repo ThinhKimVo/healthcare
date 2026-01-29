@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../src/store/auth';
-import { useTherapists, useAppointments } from '@/hooks';
+import { useTherapists, useAppointments, useUnreadNotificationCount } from '@/hooks';
 import { Avatar, Rating, Card, Badge } from '@/components/ui';
 import { formatDateTime, formatCurrencyFromCents } from '@/utils/formatting';
 import type { Therapist, Appointment } from '@/types';
@@ -33,6 +33,7 @@ export default function HomeScreen() {
 
   const { data: therapistsData, isLoading: therapistsLoading, refetch: refetchTherapists } = useTherapists({ limit: 5, isOnline: true });
   const { data: appointments, isLoading: appointmentsLoading, refetch: refetchAppointments } = useAppointments({ status: 'upcoming' });
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
 
   const featuredTherapists = therapistsData?.pages[0]?.data || [];
   const upcomingAppointments = appointments?.slice(0, 3) || [];
@@ -125,6 +126,13 @@ export default function HomeScreen() {
           onPress={() => router.push('/notifications')}
         >
           <Ionicons name="notifications-outline" size={24} color="#111827" />
+          {unreadCount > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -213,6 +221,8 @@ export default function HomeScreen() {
 function TherapistDashboard() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
+  const router = useRouter();
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -223,8 +233,18 @@ function TherapistDashboard() {
           </Text>
           <Text style={styles.subtitle}>{t('home.welcomeBack')}</Text>
         </View>
-        <TouchableOpacity style={styles.notificationButton}>
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={() => router.push('/notifications')}
+        >
           <Ionicons name="notifications-outline" size={24} color="#111827" />
+          {unreadCount > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -294,6 +314,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
   },
   searchBar: {
     flexDirection: 'row',

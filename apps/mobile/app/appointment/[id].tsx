@@ -12,9 +12,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { useAppointment } from '@/hooks/useAppointments';
-import { Avatar, Badge, Card } from '@/components/ui';
-import { formatCurrencyFromCents, formatDate, formatTime } from '@/utils/formatting';
+import { useAcceptAppointment, useDeclineAppointment } from '@/hooks/useTherapistDashboard';
+import { useAuthStore } from '@/store/auth';
+import { Avatar, Card } from '@/components/ui';
+import { formatCurrencyFromCents } from '@/utils/formatting';
 
 const STATUS_CONFIG: Record<
   string,
@@ -32,8 +35,14 @@ export default function AppointmentDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useTranslation();
+  const { user } = useAuthStore();
 
-  const { data: appointment, isLoading } = useAppointment(id!);
+  const { data: appointment, isLoading, refetch } = useAppointment(id!);
+  const acceptAppointment = useAcceptAppointment();
+  const declineAppointment = useDeclineAppointment();
+
+  // Check if current user is the therapist
+  const isTherapist = user?.role === 'THERAPIST';
 
   const canJoin =
     appointment &&
@@ -44,15 +53,61 @@ export default function AppointmentDetailsScreen() {
     appointment &&
     (appointment.status === 'PENDING' || appointment.status === 'CONFIRMED');
 
-  const canReschedule = canCancel;
+  const canReschedule = canCancel && !isTherapist;
 
   const canLeaveReview =
     appointment &&
     appointment.status === 'COMPLETED' &&
-    !appointment.review;
+    !appointment.review &&
+    !isTherapist;
+
+  const canAcceptDecline =
+    appointment &&
+    appointment.status === 'PENDING' &&
+    isTherapist;
 
   const isPast =
     appointment && new Date(appointment.scheduledAt).getTime() < Date.now();
+
+  const handleAccept = async () => {
+    if (!appointment) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      await acceptAppointment.mutateAsync(appointment.id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      refetch();
+    } catch (error) {
+      Alert.alert(t('common.error'), t('therapistDashboard.acceptFailed'));
+    }
+  };
+
+  const handleDecline = () => {
+    if (!appointment) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      t('therapistDashboard.declineTitle'),
+      t('therapistDashboard.declineMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.decline'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await declineAppointment.mutateAsync({
+                appointmentId: appointment.id,
+                reason: 'Declined by therapist',
+              });
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              router.back();
+            } catch (error) {
+              Alert.alert(t('common.error'), t('therapistDashboard.declineFailed'));
+            }
+          },
+        },
+      ],
+    );
+  };
 
   if (isLoading) {
     return (
@@ -75,6 +130,29 @@ export default function AppointmentDetailsScreen() {
 
   const statusConfig = STATUS_CONFIG[appointment.status];
 
+  // Get the other party's info based on role
+  const otherParty = isTherapist
+    ? {
+        avatarUrl: appointment.user?.avatarUrl,
+        firstName: appointment.user?.firstName,
+        lastName: appointment.user?.lastName,
+        subtitle: t('appointments.details.client'),
+      }
+    : {
+        avatarUrl: appointment.therapist?.user.avatarUrl,
+        firstName: appointment.therapist?.user.firstName,
+        lastName: appointment.therapist?.user.lastName,
+        subtitle: appointment.therapist?.professionalTitle,
+        rating: appointment.therapist?.averageRating,
+        reviews: appointment.therapist?.totalReviews,
+        id: appointment.therapist?.id,
+      };
+
+  // Calculate therapist earnings (80% of amount as example)
+  const platformFeePercent = 20;
+  const platformFee = Math.round(appointment.amount * platformFeePercent / 100);
+  const therapistEarnings = appointment.amount - platformFee;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -95,39 +173,43 @@ export default function AppointmentDetailsScreen() {
           </Text>
         </View>
 
-        {/* Therapist Card */}
+        {/* Person Card (Client for therapist, Therapist for patient) */}
         <Card variant="elevated" style={styles.card}>
-          <Text style={styles.sectionTitle}>{t('appointments.details.therapist')}</Text>
-          <View style={styles.therapistRow}>
+          <Text style={styles.sectionTitle}>
+            {isTherapist ? t('appointments.details.client') : t('appointments.details.therapist')}
+          </Text>
+          <View style={styles.personRow}>
             <Avatar
-              source={appointment.therapist?.user.avatarUrl}
-              name={`${appointment.therapist?.user.firstName} ${appointment.therapist?.user.lastName}`}
+              source={otherParty.avatarUrl}
+              name={`${otherParty.firstName} ${otherParty.lastName}`}
               size="lg"
             />
-            <View style={styles.therapistInfo}>
-              <Text style={styles.therapistName}>
-                {appointment.therapist?.user.firstName} {appointment.therapist?.user.lastName}
+            <View style={styles.personInfo}>
+              <Text style={styles.personName}>
+                {isTherapist ? '' : 'Dr. '}{otherParty.firstName} {otherParty.lastName}
               </Text>
-              <Text style={styles.therapistTitle}>
-                {appointment.therapist?.professionalTitle}
+              <Text style={styles.personSubtitle}>
+                {otherParty.subtitle}
               </Text>
-              {appointment.therapist?.averageRating && (
+              {!isTherapist && otherParty.rating && (
                 <View style={styles.ratingRow}>
                   <Ionicons name="star" size={14} color="#F59E0B" />
                   <Text style={styles.ratingText}>
-                    {appointment.therapist.averageRating.toFixed(1)} ({appointment.therapist.totalReviews} reviews)
+                    {otherParty.rating.toFixed(1)} ({otherParty.reviews} reviews)
                   </Text>
                 </View>
               )}
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.viewProfileButton}
-            onPress={() => router.push(`/therapist/${appointment.therapist?.id}`)}
-          >
-            <Text style={styles.viewProfileText}>{t('appointments.details.viewProfile')}</Text>
-            <Ionicons name="chevron-forward" size={16} color="#4F46E5" />
-          </TouchableOpacity>
+          {!isTherapist && otherParty.id && (
+            <TouchableOpacity
+              style={styles.viewProfileButton}
+              onPress={() => router.push(`/therapist/${otherParty.id}`)}
+            >
+              <Text style={styles.viewProfileText}>{t('appointments.details.viewProfile')}</Text>
+              <Ionicons name="chevron-forward" size={16} color="#4F46E5" />
+            </TouchableOpacity>
+          )}
         </Card>
 
         {/* Appointment Details */}
@@ -206,9 +288,11 @@ export default function AppointmentDetailsScreen() {
           </Card>
         )}
 
-        {/* Invoice Section */}
+        {/* Invoice/Earnings Section */}
         <Card variant="elevated" style={styles.card}>
-          <Text style={styles.sectionTitle}>{t('appointments.details.invoice')}</Text>
+          <Text style={styles.sectionTitle}>
+            {isTherapist ? t('appointments.details.earnings') : t('appointments.details.invoice')}
+          </Text>
 
           <View style={styles.invoiceRow}>
             <Text style={styles.invoiceLabel}>{t('appointments.details.sessionFee')}</Text>
@@ -217,24 +301,61 @@ export default function AppointmentDetailsScreen() {
 
           <View style={styles.invoiceRow}>
             <Text style={styles.invoiceLabel}>{t('appointments.details.platformFee')}</Text>
-            <Text style={styles.invoiceValue}>{formatCurrencyFromCents(0)}</Text>
+            <Text style={[styles.invoiceValue, isTherapist && { color: '#EF4444' }]}>
+              {isTherapist ? '-' : ''}{formatCurrencyFromCents(platformFee)}
+            </Text>
           </View>
 
           <View style={styles.invoiceDivider} />
 
           <View style={styles.invoiceRow}>
-            <Text style={styles.invoiceTotalLabel}>{t('appointments.details.total')}</Text>
-            <Text style={styles.invoiceTotalValue}>{formatCurrencyFromCents(appointment.amount)}</Text>
+            <Text style={styles.invoiceTotalLabel}>
+              {isTherapist ? t('appointments.details.yourEarnings') : t('appointments.details.total')}
+            </Text>
+            <Text style={[styles.invoiceTotalValue, isTherapist && { color: '#10B981' }]}>
+              {formatCurrencyFromCents(isTherapist ? therapistEarnings : appointment.amount)}
+            </Text>
           </View>
 
-          <TouchableOpacity style={styles.downloadButton}>
-            <Ionicons name="download-outline" size={18} color="#4F46E5" />
-            <Text style={styles.downloadText}>{t('appointments.details.downloadReceipt')}</Text>
-          </TouchableOpacity>
+          {!isTherapist && (
+            <TouchableOpacity style={styles.downloadButton}>
+              <Ionicons name="download-outline" size={18} color="#4F46E5" />
+              <Text style={styles.downloadText}>{t('appointments.details.downloadReceipt')}</Text>
+            </TouchableOpacity>
+          )}
         </Card>
 
-        {/* Feedback Section */}
-        {appointment.review && (
+        {/* Client Feedback Section (for therapist) */}
+        {isTherapist && appointment.review && (
+          <Card variant="elevated" style={styles.card}>
+            <Text style={styles.sectionTitle}>{t('appointments.details.clientFeedback')}</Text>
+            <View style={styles.feedbackStars}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Ionicons
+                  key={star}
+                  name={star <= appointment.review!.rating ? 'star' : 'star-outline'}
+                  size={24}
+                  color="#F59E0B"
+                />
+              ))}
+            </View>
+            {appointment.review.feedback && (
+              <Text style={styles.feedbackText}>{appointment.review.feedback}</Text>
+            )}
+            {appointment.review.tags && appointment.review.tags.length > 0 && (
+              <View style={styles.feedbackTags}>
+                {appointment.review.tags.map((tag, index) => (
+                  <View key={index} style={styles.feedbackTag}>
+                    <Text style={styles.feedbackTagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </Card>
+        )}
+
+        {/* Your Feedback Section (for patient) */}
+        {!isTherapist && appointment.review && (
           <Card variant="elevated" style={styles.card}>
             <Text style={styles.sectionTitle}>{t('appointments.details.yourFeedback')}</Text>
             <View style={styles.feedbackStars}>
@@ -275,6 +396,33 @@ export default function AppointmentDetailsScreen() {
 
       {/* Bottom Actions */}
       <View style={styles.bottomContainer}>
+        {/* Accept/Decline for therapist on pending appointments */}
+        {canAcceptDecline && (
+          <View style={styles.acceptDeclineButtons}>
+            <TouchableOpacity
+              style={styles.acceptButton}
+              onPress={handleAccept}
+              disabled={acceptAppointment.isPending}
+            >
+              {acceptAppointment.isPending ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                  <Text style={styles.acceptButtonText}>{t('common.accept')}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.declineButtonLarge}
+              onPress={handleDecline}
+              disabled={declineAppointment.isPending}
+            >
+              <Text style={styles.declineButtonText}>{t('common.decline')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {canJoin && (
           <TouchableOpacity
             style={styles.primaryButton}
@@ -295,7 +443,7 @@ export default function AppointmentDetailsScreen() {
           </TouchableOpacity>
         )}
 
-        {!canJoin && !canLeaveReview && isPast && (
+        {!canJoin && !canLeaveReview && !canAcceptDecline && isPast && !isTherapist && (
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push(`/book/${appointment.therapist?.id}`)}
@@ -305,7 +453,7 @@ export default function AppointmentDetailsScreen() {
           </TouchableOpacity>
         )}
 
-        {(canCancel || canReschedule) && (
+        {(canCancel || canReschedule) && !canAcceptDecline && (
           <View style={styles.secondaryButtons}>
             {canReschedule && (
               <TouchableOpacity
@@ -417,20 +565,20 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  therapistRow: {
+  personRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  therapistInfo: {
+  personInfo: {
     flex: 1,
   },
-  therapistName: {
+  personName: {
     fontSize: 18,
     fontWeight: '600',
     color: '#111827',
   },
-  therapistTitle: {
+  personSubtitle: {
     fontSize: 14,
     color: '#6B7280',
     marginTop: 2,
@@ -563,7 +711,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   bottomSpacer: {
-    height: 120,
+    height: 140,
   },
   bottomContainer: {
     position: 'absolute',
@@ -576,6 +724,40 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
+  },
+  acceptDeclineButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  acceptButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    paddingVertical: 16,
+    gap: 8,
+  },
+  acceptButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  declineButtonLarge: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  declineButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#DC2626',
   },
   primaryButton: {
     flexDirection: 'row',

@@ -5,11 +5,15 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { AppointmentStatus, AppointmentType, Prisma } from '@prisma/client';
 
 @Injectable()
 export class AppointmentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(data: {
     userId: string;
@@ -43,7 +47,13 @@ export class AppointmentsService {
       throw new BadRequestException('Time slot is not available');
     }
 
-    return this.prisma.appointment.create({
+    // Get patient info for notification
+    const patient = await this.prisma.user.findUnique({
+      where: { id: data.userId },
+      select: { firstName: true, lastName: true },
+    });
+
+    const appointment = await this.prisma.appointment.create({
       data: {
         userId: data.userId,
         therapistId: data.therapistId,
@@ -60,6 +70,7 @@ export class AppointmentsService {
           include: {
             user: {
               select: {
+                id: true,
                 firstName: true,
                 lastName: true,
                 avatarUrl: true,
@@ -69,6 +80,42 @@ export class AppointmentsService {
         },
       },
     });
+
+    // Notify therapist of new booking request
+    const patientName = `${patient?.firstName || ''} ${patient?.lastName || ''}`.trim() || 'A patient';
+    const dateTime = this.formatDateTime(data.scheduledAt, data.timezone);
+
+    await this.notificationsService.sendBookingRequest(
+      appointment.therapist.user.id,
+      appointment.id,
+      patientName,
+      dateTime,
+    );
+
+    return appointment;
+  }
+
+  private formatDateTime(date: Date, timezone: string): string {
+    try {
+      return date.toLocaleString('en-US', {
+        timeZone: timezone,
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } catch {
+      return date.toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    }
   }
 
   async findByUser(userId: string, status?: 'upcoming' | 'past') {
@@ -170,16 +217,26 @@ export class AppointmentsService {
     return appointment;
   }
 
-  async confirm(id: string, therapistId: string) {
+  async confirm(id: string, userId: string) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
+      include: {
+        therapist: {
+          include: {
+            user: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+          },
+        },
+      },
     });
 
     if (!appointment) {
       throw new NotFoundException('Appointment not found');
     }
 
-    if (appointment.therapistId !== therapistId) {
+    // Check if the user is the therapist for this appointment
+    if (appointment.therapist.user.id !== userId) {
       throw new ForbiddenException('Not authorized');
     }
 
@@ -187,13 +244,75 @@ export class AppointmentsService {
       throw new BadRequestException('Appointment cannot be confirmed');
     }
 
-    return this.prisma.appointment.update({
+    const updatedAppointment = await this.prisma.appointment.update({
       where: { id },
       data: {
         status: AppointmentStatus.CONFIRMED,
         confirmedAt: new Date(),
       },
     });
+
+    // Notify patient of confirmed booking
+    const therapistName = `Dr. ${appointment.therapist.user.firstName} ${appointment.therapist.user.lastName}`.trim();
+    const dateTime = this.formatDateTime(appointment.scheduledAt, appointment.timezone);
+
+    await this.notificationsService.sendBookingConfirmation(
+      appointment.userId,
+      appointment.id,
+      therapistName,
+      dateTime,
+    );
+
+    return updatedAppointment;
+  }
+
+  async decline(id: string, userId: string, reason?: string) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+      include: {
+        therapist: {
+          include: {
+            user: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    // Check if the user is the therapist for this appointment
+    if (appointment.therapist.user.id !== userId) {
+      throw new ForbiddenException('Not authorized');
+    }
+
+    if (appointment.status !== AppointmentStatus.PENDING) {
+      throw new BadRequestException('Only pending appointments can be declined');
+    }
+
+    const updatedAppointment = await this.prisma.appointment.update({
+      where: { id },
+      data: {
+        status: AppointmentStatus.CANCELLED,
+        cancellationReason: reason || 'Declined by therapist',
+        cancelledAt: new Date(),
+      },
+    });
+
+    // Notify patient of declined booking
+    const therapistName = `Dr. ${appointment.therapist.user.firstName} ${appointment.therapist.user.lastName}`.trim();
+
+    await this.notificationsService.sendBookingDeclined(
+      appointment.userId,
+      appointment.id,
+      therapistName,
+      reason,
+    );
+
+    return updatedAppointment;
   }
 
   async cancel(
@@ -204,6 +323,18 @@ export class AppointmentsService {
   ) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
+      include: {
+        user: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+        therapist: {
+          include: {
+            user: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+          },
+        },
+      },
     });
 
     if (!appointment) {
@@ -215,7 +346,7 @@ export class AppointmentsService {
       throw new ForbiddenException('Not authorized');
     }
 
-    if (isTherapist && appointment.therapistId !== userId) {
+    if (isTherapist && appointment.therapist.user.id !== userId) {
       throw new ForbiddenException('Not authorized');
     }
 
@@ -238,7 +369,7 @@ export class AppointmentsService {
     }
     // Less than 2 hours: case by case (handled by admin)
 
-    return this.prisma.appointment.update({
+    const updatedAppointment = await this.prisma.appointment.update({
       where: { id },
       data: {
         status: AppointmentStatus.CANCELLED,
@@ -246,18 +377,52 @@ export class AppointmentsService {
         cancelledAt: new Date(),
       },
     });
+
+    // Notify the other party of cancellation
+    const dateTime = this.formatDateTime(appointment.scheduledAt, appointment.timezone);
+
+    if (isTherapist) {
+      // Therapist cancelled, notify patient
+      const therapistName = `Dr. ${appointment.therapist.user.firstName} ${appointment.therapist.user.lastName}`.trim();
+      await this.notificationsService.sendAppointmentCancelled(
+        appointment.userId,
+        appointment.id,
+        therapistName,
+        dateTime,
+        reason,
+      );
+    } else {
+      // Patient cancelled, notify therapist
+      const patientName = `${appointment.user.firstName} ${appointment.user.lastName}`.trim();
+      await this.notificationsService.sendAppointmentCancelled(
+        appointment.therapist.user.id,
+        appointment.id,
+        patientName,
+        dateTime,
+        reason,
+      );
+    }
+
+    return updatedAppointment;
   }
 
-  async complete(id: string, therapistId: string, sessionNotes?: string) {
+  async complete(id: string, userId: string, sessionNotes?: string) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
+      include: {
+        therapist: {
+          include: {
+            user: { select: { id: true } },
+          },
+        },
+      },
     });
 
     if (!appointment) {
       throw new NotFoundException('Appointment not found');
     }
 
-    if (appointment.therapistId !== therapistId) {
+    if (appointment.therapist.user.id !== userId) {
       throw new ForbiddenException('Not authorized');
     }
 

@@ -5,6 +5,7 @@ import { UsersModule } from './users/users.module';
 import { TherapistsModule } from './therapists/therapists.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { PaymentsModule } from './payments/payments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { AgoraModule } from './agora/agora.module';
@@ -22,6 +23,7 @@ import { AgoraModule } from './agora/agora.module';
     TherapistsModule,
     AppointmentsModule,
     PaymentsModule,
+    NotificationsModule,
     AgoraModule,
   ],
 })

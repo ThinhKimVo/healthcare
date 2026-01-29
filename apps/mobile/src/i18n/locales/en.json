@@ -6,6 +6,8 @@
     "success": "Success",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "decline": "Decline",
+    "accept": "Accept",
     "save": "Save",
     "delete": "Delete",
     "edit": "Edit",
@@ -237,6 +239,7 @@
     "status": {
       "pending": "Pending",
       "confirmed": "Confirmed",
+      "inProgress": "In Progress",
       "completed": "Completed",
       "cancelled": "Cancelled",
       "noShow": "No Show"
@@ -252,7 +255,7 @@
       "bookAgain": "Book Again"
     },
     "countdown": {
-      "startsIn": "Starts in",
+      "startsIn": "Starts in {{time}}",
       "days": "d",
       "hours": "h",
       "minutes": "m"
@@ -281,6 +284,8 @@
     },
     "details": {
       "title": "Appointment Details",
+      "therapist": "Therapist",
+      "client": "Client",
       "sessionDetails": "Session Details",
       "date": "Date",
       "time": "Time",
@@ -291,15 +296,21 @@
       "noBookingNotes": "No notes provided",
       "sessionNotes": "Session Notes",
       "noSessionNotes": "Session notes will be available after the appointment",
+      "viewProfile": "View Profile",
       "invoice": "Invoice",
+      "earnings": "Earnings",
       "sessionFee": "Session Fee",
       "platformFee": "Platform Fee",
       "discount": "Discount",
       "total": "Total",
+      "yourEarnings": "Your Earnings",
       "paid": "Paid",
       "pending": "Payment Pending",
+      "downloadReceipt": "Download Receipt",
       "yourFeedback": "Your Feedback",
+      "clientFeedback": "Client Feedback",
       "noFeedback": "You haven't left feedback yet",
+      "cancellationReason": "Cancellation Reason",
       "joinSession": "Join Session",
       "reschedule": "Reschedule",
       "cancelAppointment": "Cancel Appointment"
@@ -570,6 +581,20 @@
     "errorSearching": "Unable to search for therapists",
     "minDuration": "Minimum session duration: {{minutes}} minutes"
   },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": {
+      "title": "No notifications",
+      "subtitle": "When you receive notifications, they will appear here"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
+    }
+  },
   "therapistDashboard": {
     "home": "Home",
     "appointments": "Appointments",
@@ -622,6 +647,11 @@
     "autoOfflineDescription": "Automatically go offline after 10pm",
     "autoOfflineUpdateFailed": "Failed to update auto-offline settings",
     "availability": "Availability",
-    "reviews": "reviews"
+    "reviews": "reviews",
+    "pending": "Pending",
+    "declineTitle": "Decline Appointment",
+    "declineMessage": "Are you sure you want to decline this appointment request?",
+    "acceptFailed": "Failed to accept appointment. Please try again.",
+    "declineFailed": "Failed to decline appointment. Please try again."
   }
 }

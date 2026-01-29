@@ -93,6 +93,20 @@ export default function InstantCallSearchScreen() {
   const fetchAvailableTherapists = async () => {
     try {
       setSearchState('searching');
+
+      // Test Firestore connection first (for debugging)
+      if (__DEV__) {
+        console.log('[InstantCall] Testing Firestore connection...');
+        const isConnected = await callSignalingService.testFirestoreConnection();
+        if (!isConnected) {
+          console.error('[InstantCall] Firestore connection test FAILED');
+          setSearchState('error');
+          setErrorMessage('Firestore connection failed - check console for details');
+          return;
+        }
+        console.log('[InstantCall] Firestore connection test PASSED');
+      }
+
       const therapists = await therapistsService.findAvailableForInstantCall(
         (user as any)?.preferredLanguage
       );

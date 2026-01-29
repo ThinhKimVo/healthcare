@@ -552,6 +552,20 @@
       "remaining": "المتبقي"
     }
   },
+  "notifications": {
+    "title": "الإشعارات",
+    "markAllRead": "تحديد الكل كمقروء",
+    "empty": {
+      "title": "لا توجد إشعارات",
+      "subtitle": "عندما تتلقى إشعارات، ستظهر هنا"
+    },
+    "time": {
+      "justNow": "الآن",
+      "minutesAgo": "منذ {{count}} دقيقة",
+      "hoursAgo": "منذ {{count}} ساعة",
+      "daysAgo": "منذ {{count}} يوم"
+    }
+  },
   "instantCall": {
     "calling": "جاري الاتصال...",
     "ringing": "الهاتف يرن...",

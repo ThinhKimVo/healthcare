@@ -23,7 +23,10 @@ import {
   useTherapistStats,
   useUpcomingAppointments,
   useUpdateOnlineStatus,
+  useAcceptAppointment,
+  useDeclineAppointment,
 } from '@/hooks/useTherapistDashboard';
+import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 import { Avatar } from '@/components/ui';
 import type { Appointment } from '@/types';
 
@@ -37,9 +40,12 @@ export default function TherapistDashboardScreen() {
   const { data: profile, refetch: refetchProfile } = useTherapistProfile();
   const { data: stats, refetch: refetchStats } = useTherapistStats();
   const { data: upcomingAppointments, refetch: refetchAppointments } = useUpcomingAppointments(3);
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
 
   // Mutations
   const updateOnlineStatus = useUpdateOnlineStatus();
+  const acceptAppointment = useAcceptAppointment();
+  const declineAppointment = useDeclineAppointment();
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -63,6 +69,40 @@ export default function TherapistDashboardScreen() {
 
   const handleViewAppointment = (appointment: Appointment) => {
     router.push(`/appointment/${appointment.id}`);
+  };
+
+  const handleAcceptAppointment = async (appointmentId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      await acceptAppointment.mutateAsync(appointmentId);
+    } catch (error) {
+      Alert.alert(t('common.error'), t('therapistDashboard.acceptFailed'));
+    }
+  };
+
+  const handleDeclineAppointment = (appointment: Appointment) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      t('therapistDashboard.declineTitle'),
+      t('therapistDashboard.declineMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.decline'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await declineAppointment.mutateAsync({
+                appointmentId: appointment.id,
+                reason: 'Schedule conflict',
+              });
+            } catch (error) {
+              Alert.alert(t('common.error'), t('therapistDashboard.declineFailed'));
+            }
+          },
+        },
+      ],
+    );
   };
 
   const formatCurrency = (amount: number) => {
@@ -104,9 +144,11 @@ export default function TherapistDashboardScreen() {
           >
             <Ionicons name="notifications-outline" size={24} color="#374151" />
             {/* Notification badge */}
-            <View style={styles.notificationBadge}>
-              <Text style={styles.badgeText}>3</Text>
-            </View>
+            {unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -178,46 +220,78 @@ export default function TherapistDashboardScreen() {
           </View>
 
           {upcomingAppointments && upcomingAppointments.length > 0 ? (
-            upcomingAppointments.map((appointment) => (
-              <TouchableOpacity
-                key={appointment.id}
-                style={styles.appointmentCard}
-                onPress={() => handleViewAppointment(appointment)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.appointmentLeft}>
-                  <Avatar
-                    source={appointment.user?.avatarUrl}
-                    name={`${appointment.user?.firstName || ''} ${appointment.user?.lastName || ''}`}
-                    size="md"
-                  />
-                  <View style={styles.appointmentInfo}>
-                    <Text style={styles.clientName}>
-                      {appointment.user?.firstName} {appointment.user?.lastName}
-                    </Text>
-                    <Text style={styles.appointmentTime}>
-                      {formatAppointmentTime(appointment.scheduledAt)}
-                    </Text>
-                    <View style={styles.appointmentMeta}>
-                      <View style={styles.typeBadge}>
-                        <Text style={styles.typeText}>
-                          {appointment.type === 'INSTANT'
-                            ? t('therapistDashboard.instant')
-                            : t('therapistDashboard.scheduled')}
+            upcomingAppointments.map((appointment) => {
+              const isPending = appointment.status === 'PENDING';
+              return (
+                <TouchableOpacity
+                  key={appointment.id}
+                  style={[
+                    styles.appointmentCard,
+                    isPending && styles.appointmentCardPending,
+                  ]}
+                  onPress={() => handleViewAppointment(appointment)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.appointmentLeft}>
+                    <Avatar
+                      source={appointment.user?.avatarUrl}
+                      name={`${appointment.user?.firstName || ''} ${appointment.user?.lastName || ''}`}
+                      size="md"
+                    />
+                    <View style={styles.appointmentInfo}>
+                      <View style={styles.clientNameRow}>
+                        <Text style={styles.clientName}>
+                          {appointment.user?.firstName} {appointment.user?.lastName}
                         </Text>
+                        {isPending && (
+                          <View style={styles.pendingBadge}>
+                            <Text style={styles.pendingBadgeText}>
+                              {t('therapistDashboard.pending')}
+                            </Text>
+                          </View>
+                        )}
                       </View>
-                      <Text style={styles.duration}>{appointment.duration} min</Text>
+                      <Text style={styles.appointmentTime}>
+                        {formatAppointmentTime(appointment.scheduledAt)}
+                      </Text>
+                      <View style={styles.appointmentMeta}>
+                        <View style={styles.typeBadge}>
+                          <Text style={styles.typeText}>
+                            {appointment.type === 'INSTANT'
+                              ? t('therapistDashboard.instant')
+                              : t('therapistDashboard.scheduled')}
+                          </Text>
+                        </View>
+                        <Text style={styles.duration}>{appointment.duration} min</Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-                <TouchableOpacity
-                  style={styles.startCallButton}
-                  onPress={() => handleStartCall(appointment)}
-                >
-                  <Ionicons name="videocam" size={20} color="#fff" />
+                  {isPending ? (
+                    <View style={styles.pendingActions}>
+                      <TouchableOpacity
+                        style={styles.declineButton}
+                        onPress={() => handleDeclineAppointment(appointment)}
+                      >
+                        <Ionicons name="close" size={20} color="#EF4444" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.acceptButton}
+                        onPress={() => handleAcceptAppointment(appointment.id)}
+                      >
+                        <Ionicons name="checkmark" size={20} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.startCallButton}
+                      onPress={() => handleStartCall(appointment)}
+                    >
+                      <Ionicons name="videocam" size={20} color="#fff" />
+                    </TouchableOpacity>
+                  )}
                 </TouchableOpacity>
-              </TouchableOpacity>
-            ))
+              );
+            })
           ) : (
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={48} color="#D1D5DB" />
@@ -411,6 +485,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  appointmentCardPending: {
+    borderColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
   },
   appointmentLeft: {
     flexDirection: 'row',
@@ -425,6 +505,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#111827',
+  },
+  clientNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  pendingBadge: {
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  pendingBadgeText: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
   appointmentTime: {
     fontSize: 14,
@@ -457,6 +555,27 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pendingActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  declineButton: {
+    backgroundColor: '#FEE2E2',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  acceptButton: {
+    backgroundColor: '#10B981',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -552,6 +552,20 @@
       "remaining": "Restante"
     }
   },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todo como leído",
+    "empty": {
+      "title": "Sin notificaciones",
+      "subtitle": "Cuando recibas notificaciones, aparecerán aquí"
+    },
+    "time": {
+      "justNow": "Ahora mismo",
+      "minutesAgo": "Hace {{count}}m",
+      "hoursAgo": "Hace {{count}}h",
+      "daysAgo": "Hace {{count}}d"
+    }
+  },
   "instantCall": {
     "calling": "Llamando...",
     "ringing": "Sonando...",

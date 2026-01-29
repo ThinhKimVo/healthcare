@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { TherapistVerificationStatus, Prisma } from '@prisma/client';
+import { TherapistVerificationStatus, Prisma, AppointmentStatus, PaymentStatus } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TherapistsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async findAll(options: {
     page?: number;
@@ -512,5 +516,342 @@ export class TherapistsService {
       therapistTimezone: therapist.user.timezone,
       dates,
     };
+  }
+
+  // Get therapist stats for dashboard
+  async getTherapistStats(userId: string) {
+    const therapist = await this.prisma.therapist.findFirst({
+      where: { userId },
+    });
+
+    if (!therapist) {
+      throw new NotFoundException('Therapist not found');
+    }
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+    // Calculate start of week (Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    // Get counts in parallel
+    const [pendingCount, todayCount, weekEarnings, totalEarnings, totalSessions] = await Promise.all([
+      this.prisma.appointment.count({
+        where: {
+          therapistId: therapist.id,
+          status: AppointmentStatus.PENDING,
+        },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          therapistId: therapist.id,
+          scheduledAt: {
+            gte: startOfToday,
+            lt: endOfToday,
+          },
+          status: { in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] },
+        },
+      }),
+      this.prisma.payment.aggregate({
+        where: {
+          appointment: { therapistId: therapist.id },
+          status: PaymentStatus.SUCCESS,
+          createdAt: { gte: startOfWeek },
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: {
+          appointment: { therapistId: therapist.id },
+          status: PaymentStatus.SUCCESS,
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          therapistId: therapist.id,
+          status: AppointmentStatus.COMPLETED,
+        },
+      }),
+    ]);
+
+    return {
+      pendingRequests: pendingCount,
+      todayAppointments: todayCount,
+      weekEarnings: weekEarnings._sum?.amount || 0,
+      totalEarnings: totalEarnings._sum?.amount || 0,
+      totalSessions,
+      averageRating: therapist.averageRating,
+      totalReviews: therapist.totalReviews,
+    };
+  }
+
+  // Get therapist appointments with filters
+  async getTherapistAppointments(
+    userId: string,
+    options: {
+      status?: string;
+      search?: string;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
+    const { status = 'upcoming', search, page = 1, limit = 20 } = options;
+
+    const therapist = await this.prisma.therapist.findFirst({
+      where: { userId },
+    });
+
+    if (!therapist) {
+      throw new NotFoundException('Therapist not found');
+    }
+
+    const now = new Date();
+
+    // Build where clause based on status filter
+    let statusFilter: any = {};
+    let dateFilter: any = {};
+
+    if (status === 'upcoming') {
+      statusFilter = { in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] };
+      dateFilter = { gte: now };
+    } else if (status === 'past') {
+      statusFilter = { in: [AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW] };
+    }
+
+    // Build search filter
+    let searchFilter: any = {};
+    if (search) {
+      searchFilter = {
+        user: {
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+          ],
+        },
+      };
+    }
+
+    const where = {
+      therapistId: therapist.id,
+      status: statusFilter,
+      ...(dateFilter.gte ? { scheduledAt: dateFilter } : {}),
+      ...searchFilter,
+    };
+
+    const [appointments, total] = await Promise.all([
+      this.prisma.appointment.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
+          },
+          review: true,
+        },
+        orderBy: status === 'upcoming'
+          ? [{ status: 'asc' }, { scheduledAt: 'asc' }] // PENDING first, then by date
+          : { scheduledAt: 'desc' }, // Most recent first for past
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.appointment.count({ where }),
+    ]);
+
+    return {
+      data: appointments,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // Get upcoming appointments for therapist (including PENDING)
+  async getUpcomingAppointments(userId: string, limit = 10) {
+    const therapist = await this.prisma.therapist.findFirst({
+      where: { userId },
+    });
+
+    if (!therapist) {
+      throw new NotFoundException('Therapist not found');
+    }
+
+    return this.prisma.appointment.findMany({
+      where: {
+        therapistId: therapist.id,
+        scheduledAt: { gte: new Date() },
+        status: { in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: [
+        { status: 'asc' }, // PENDING first
+        { scheduledAt: 'asc' },
+      ],
+      take: limit,
+    });
+  }
+
+  // Accept appointment request
+  async acceptAppointment(userId: string, appointmentId: string) {
+    const therapist = await this.prisma.therapist.findFirst({
+      where: { userId },
+      include: {
+        user: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    if (!therapist) {
+      throw new NotFoundException('Therapist not found');
+    }
+
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    if (appointment.therapistId !== therapist.id) {
+      throw new ForbiddenException('Not authorized');
+    }
+
+    if (appointment.status !== AppointmentStatus.PENDING) {
+      throw new BadRequestException('Appointment is not pending');
+    }
+
+    const updated = await this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        status: AppointmentStatus.CONFIRMED,
+        confirmedAt: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    // Send notification to patient
+    const therapistName = `Dr. ${therapist.user.firstName} ${therapist.user.lastName}`.trim();
+    const dateTime = this.formatDateTime(appointment.scheduledAt, appointment.timezone);
+
+    await this.notificationsService.sendBookingConfirmation(
+      appointment.userId,
+      appointment.id,
+      therapistName,
+      dateTime,
+    );
+
+    return updated;
+  }
+
+  // Decline appointment request
+  async declineAppointment(userId: string, appointmentId: string, reason?: string) {
+    const therapist = await this.prisma.therapist.findFirst({
+      where: { userId },
+      include: {
+        user: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    if (!therapist) {
+      throw new NotFoundException('Therapist not found');
+    }
+
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    if (appointment.therapistId !== therapist.id) {
+      throw new ForbiddenException('Not authorized');
+    }
+
+    if (appointment.status !== AppointmentStatus.PENDING) {
+      throw new BadRequestException('Appointment is not pending');
+    }
+
+    const updated = await this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        status: AppointmentStatus.CANCELLED,
+        cancellationReason: reason || 'Declined by therapist',
+        cancelledAt: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    // Send notification to patient
+    const therapistName = `Dr. ${therapist.user.firstName} ${therapist.user.lastName}`.trim();
+
+    await this.notificationsService.sendBookingDeclined(
+      appointment.userId,
+      appointment.id,
+      therapistName,
+      reason,
+    );
+
+    return updated;
+  }
+
+  private formatDateTime(date: Date, timezone: string): string {
+    try {
+      return date.toLocaleString('en-US', {
+        timeZone: timezone,
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } catch {
+      return date.toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    }
   }
 }

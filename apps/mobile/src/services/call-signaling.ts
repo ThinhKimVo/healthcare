@@ -3,6 +3,11 @@ import firestore, {
 } from '@react-native-firebase/firestore';
 import { useAuthStore } from '@/store/auth';
 
+// Disable offline persistence to avoid queue issues
+firestore().settings({
+  persistence: false,
+});
+
 export type CallStatus = 'pending' | 'ringing' | 'accepted' | 'declined' | 'ended' | 'missed' | 'cancelled';
 
 export interface ParticipantMediaState {
@@ -47,6 +52,46 @@ const CALLS_COLLECTION = 'calls';
 class CallSignalingService {
   private currentCallId: string | null = null;
   private callListener: (() => void) | null = null;
+
+  /**
+   * Test Firestore connectivity - call this to diagnose issues
+   */
+  async testFirestoreConnection(): Promise<boolean> {
+    try {
+      console.log('[Firestore Test] Starting connectivity test...');
+
+      // Try a simple read first
+      const testRead = await firestore()
+        .collection(CALLS_COLLECTION)
+        .limit(1)
+        .get();
+      console.log('[Firestore Test] Read test passed, docs:', testRead.size);
+
+      // Try a simple write
+      const testDocId = `test-${Date.now()}`;
+      await firestore()
+        .collection(CALLS_COLLECTION)
+        .doc(testDocId)
+        .set({ test: true, timestamp: firestore.FieldValue.serverTimestamp() });
+      console.log('[Firestore Test] Write test passed');
+
+      // Clean up test doc
+      await firestore()
+        .collection(CALLS_COLLECTION)
+        .doc(testDocId)
+        .delete();
+      console.log('[Firestore Test] Delete test passed');
+
+      console.log('[Firestore Test] All tests passed!');
+      return true;
+    } catch (error: any) {
+      console.error('[Firestore Test] FAILED');
+      console.error('Error code:', error?.code);
+      console.error('Error message:', error?.message);
+      console.error('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+      return false;
+    }
+  }
 
   /**
    * Create a new call request
@@ -96,23 +141,23 @@ class CallSignalingService {
     console.log('Creating call with data:', JSON.stringify(callData, null, 2));
 
     try {
-      console.log('Attempting Firestore write...');
+      console.log('Attempting Firestore write to collection:', CALLS_COLLECTION, 'doc:', callId);
 
-      // Add timeout wrapper
-      const writePromise = firestore()
+      // Direct write without timeout - to see actual error
+      await firestore()
         .collection(CALLS_COLLECTION)
         .doc(callId)
         .set(callData);
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Firestore write timed out after 10s')), 10000);
-      });
-
-      await Promise.race([writePromise, timeoutPromise]);
-
       console.log('Call created successfully:', callId);
     } catch (firestoreError: any) {
-      console.error('Firestore write error:', firestoreError?.message || firestoreError);
+      // Log full error details for debugging
+      console.error('=== FIRESTORE ERROR DETAILS ===');
+      console.error('Error code:', firestoreError?.code);
+      console.error('Error message:', firestoreError?.message);
+      console.error('Error name:', firestoreError?.name);
+      console.error('Full error:', JSON.stringify(firestoreError, Object.getOwnPropertyNames(firestoreError), 2));
+      console.error('===============================');
       throw firestoreError;
     }
 

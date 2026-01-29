@@ -7,6 +7,7 @@ import { I18nextProvider } from 'react-i18next';
 import { useAuthStore } from '@/store/auth';
 import { useLocaleStore } from '@/store/locale';
 import { configureGoogleSignIn } from '@/services/social-auth';
+import { pushNotificationService } from '@/services';
 import i18n from '@/i18n';
 
 SplashScreen.preventAutoHideAsync();
@@ -26,6 +27,30 @@ function useProtectedRoute() {
   const router = useRouter();
   const navigationState = useRootNavigationState();
   const hasRedirected = useRef(false);
+  const pushNotificationsInitialized = useRef(false);
+
+  // Initialize push notifications when authenticated
+  useEffect(() => {
+    if (isAuthenticated && !pushNotificationsInitialized.current) {
+      pushNotificationsInitialized.current = true;
+
+      // Set up callback to refresh notification count when push is received
+      pushNotificationService.setOnNotificationReceived(() => {
+        queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      });
+
+      pushNotificationService.initialize().catch((error) => {
+        console.warn('[PushNotifications] Init error:', error);
+      });
+    }
+
+    // Cleanup when logging out
+    if (!isAuthenticated && pushNotificationsInitialized.current) {
+      pushNotificationsInitialized.current = false;
+      pushNotificationService.removeListeners();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!navigationState?.key || isLoading) return;

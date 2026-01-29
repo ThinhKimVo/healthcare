@@ -78,14 +78,34 @@ export class AppointmentsController {
     return this.appointmentsService.confirm(id, req.user.id);
   }
 
+  @Patch(':id/decline')
+  @ApiOperation({ summary: 'Decline appointment request (therapist only)' })
+  async decline(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.appointmentsService.decline(id, req.user.id, body.reason);
+  }
+
   @Patch(':id/cancel')
-  @ApiOperation({ summary: 'Cancel appointment' })
+  @ApiOperation({ summary: 'Cancel appointment (patient)' })
   async cancel(
     @Request() req: any,
     @Param('id') id: string,
     @Body() body: { reason: string },
   ) {
-    return this.appointmentsService.cancel(id, req.user.id, body.reason);
+    return this.appointmentsService.cancel(id, req.user.id, body.reason, false);
+  }
+
+  @Patch(':id/therapist-cancel')
+  @ApiOperation({ summary: 'Cancel appointment (therapist)' })
+  async therapistCancel(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { reason: string },
+  ) {
+    return this.appointmentsService.cancel(id, req.user.id, body.reason, true);
   }
 
   @Patch(':id/complete')

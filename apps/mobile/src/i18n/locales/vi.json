@@ -6,6 +6,8 @@
     "success": "Thành công",
     "cancel": "Hủy",
     "confirm": "Xác nhận",
+    "decline": "Từ chối",
+    "accept": "Chấp nhận",
     "save": "Lưu",
     "delete": "Xóa",
     "edit": "Sửa",
@@ -236,6 +238,7 @@
     "status": {
       "pending": "Chờ Xác Nhận",
       "confirmed": "Đã Xác Nhận",
+      "inProgress": "Đang Diễn Ra",
       "completed": "Hoàn Thành",
       "cancelled": "Đã Hủy",
       "noShow": "Vắng Mặt"
@@ -251,7 +254,7 @@
       "bookAgain": "Đặt Lại"
     },
     "countdown": {
-      "startsIn": "Bắt đầu sau",
+      "startsIn": "Bắt đầu sau {{time}}",
       "days": "n",
       "hours": "g",
       "minutes": "p"
@@ -280,6 +283,8 @@
     },
     "details": {
       "title": "Chi Tiết Lịch Hẹn",
+      "therapist": "Chuyên Gia",
+      "client": "Khách Hàng",
       "sessionDetails": "Chi Tiết Buổi Hẹn",
       "date": "Ngày",
       "time": "Giờ",
@@ -290,15 +295,21 @@
       "noBookingNotes": "Không có ghi chú",
       "sessionNotes": "Ghi Chú Buổi Hẹn",
       "noSessionNotes": "Ghi chú buổi hẹn sẽ có sau khi hoàn thành",
+      "viewProfile": "Xem Hồ Sơ",
       "invoice": "Hóa Đơn",
+      "earnings": "Thu Nhập",
       "sessionFee": "Phí Buổi Hẹn",
       "platformFee": "Phí Nền Tảng",
       "discount": "Giảm Giá",
       "total": "Tổng Cộng",
+      "yourEarnings": "Thu Nhập Của Bạn",
       "paid": "Đã Thanh Toán",
       "pending": "Chờ Thanh Toán",
+      "downloadReceipt": "Tải Hóa Đơn",
       "yourFeedback": "Đánh Giá Của Bạn",
+      "clientFeedback": "Đánh Giá Từ Khách Hàng",
       "noFeedback": "Bạn chưa để lại đánh giá",
+      "cancellationReason": "Lý Do Hủy",
       "joinSession": "Tham Gia Buổi Hẹn",
       "reschedule": "Đổi Lịch",
       "cancelAppointment": "Hủy Lịch Hẹn"
@@ -552,6 +563,20 @@
       "remaining": "Còn Lại"
     }
   },
+  "notifications": {
+    "title": "Thông báo",
+    "markAllRead": "Đánh dấu tất cả đã đọc",
+    "empty": {
+      "title": "Không có thông báo",
+      "subtitle": "Khi bạn nhận được thông báo, chúng sẽ xuất hiện ở đây"
+    },
+    "time": {
+      "justNow": "Vừa xong",
+      "minutesAgo": "{{count}} phút trước",
+      "hoursAgo": "{{count}} giờ trước",
+      "daysAgo": "{{count}} ngày trước"
+    }
+  },
   "instantCall": {
     "calling": "Đang gọi...",
     "ringing": "Đang đổ chuông...",
@@ -568,5 +593,39 @@
     "noTherapistsSubtitle": "Tất cả các chuyên gia hiện đang bận. Vui lòng thử lại sau.",
     "errorSearching": "Không thể tìm kiếm chuyên gia",
     "minDuration": "Thời lượng tối thiểu: {{minutes}} phút"
+  },
+  "therapistDashboard": {
+    "home": "Trang chủ",
+    "appointments": "Lịch hẹn",
+    "earnings": "Thu nhập",
+    "doctor": "Bác sĩ",
+    "goodMorning": "Chào buổi sáng",
+    "goodAfternoon": "Chào buổi chiều",
+    "goodEvening": "Chào buổi tối",
+    "online": "Trực tuyến",
+    "offline": "Ngoại tuyến",
+    "onlineDescription": "Bạn có thể nhận cuộc gọi tức thì và hiển thị trong kết quả tìm kiếm",
+    "offlineDescription": "Bạn không nhận cuộc gọi tức thì. Lịch hẹn đã đặt vẫn hoạt động",
+    "statusUpdateFailed": "Cập nhật trạng thái thất bại. Vui lòng thử lại.",
+    "todayAppointments": "Buổi hẹn hôm nay",
+    "weekEarnings": "Tuần này",
+    "pendingRequests": "Chờ duyệt",
+    "averageRating": "Đánh giá",
+    "upcomingAppointments": "Lịch hẹn sắp tới",
+    "noUpcomingAppointments": "Không có lịch hẹn sắp tới",
+    "quickActions": "Thao tác nhanh",
+    "viewCalendar": "Xem lịch",
+    "viewEarnings": "Xem thu nhập",
+    "settings": "Cài đặt",
+    "instant": "Tức thì",
+    "scheduled": "Đã lên lịch",
+    "upcoming": "Sắp tới",
+    "past": "Đã qua",
+    "cancelled": "Đã hủy",
+    "pending": "Chờ duyệt",
+    "declineTitle": "Từ chối lịch hẹn",
+    "declineMessage": "Bạn có chắc muốn từ chối yêu cầu lịch hẹn này?",
+    "acceptFailed": "Chấp nhận lịch hẹn thất bại. Vui lòng thử lại.",
+    "declineFailed": "Từ chối lịch hẹn thất bại. Vui lòng thử lại."
   }
 }
