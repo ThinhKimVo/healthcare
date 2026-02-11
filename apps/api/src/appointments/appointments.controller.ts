@@ -62,7 +62,6 @@ export class AppointmentsController {
     @Request() req: any,
     @Query('status') status?: 'upcoming' | 'past',
   ) {
-    // TODO: Get therapistId from user
     return this.appointmentsService.findByTherapist(req.user.id, status);
   }
 

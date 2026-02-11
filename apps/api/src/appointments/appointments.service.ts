@@ -122,13 +122,9 @@ export class AppointmentsService {
     const where: Prisma.AppointmentWhereInput = { userId };
 
     if (status === 'upcoming') {
-      where.scheduledAt = { gte: new Date() };
       where.status = { in: ['PENDING', 'CONFIRMED'] };
     } else if (status === 'past') {
-      where.OR = [
-        { scheduledAt: { lt: new Date() } },
-        { status: { in: ['COMPLETED', 'CANCELLED'] } },
-      ];
+      where.status = { in: ['COMPLETED', 'CANCELLED', 'NO_SHOW'] };
     }
 
     return this.prisma.appointment.findMany({
@@ -151,17 +147,22 @@ export class AppointmentsService {
     });
   }
 
-  async findByTherapist(therapistId: string, status?: 'upcoming' | 'past') {
-    const where: Prisma.AppointmentWhereInput = { therapistId };
+  async findByTherapist(userId: string, status?: 'upcoming' | 'past') {
+    const therapist = await this.prisma.therapist.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!therapist) {
+      throw new NotFoundException('Therapist profile not found');
+    }
+
+    const where: Prisma.AppointmentWhereInput = { therapistId: therapist.id };
 
     if (status === 'upcoming') {
-      where.scheduledAt = { gte: new Date() };
       where.status = { in: ['PENDING', 'CONFIRMED'] };
     } else if (status === 'past') {
-      where.OR = [
-        { scheduledAt: { lt: new Date() } },
-        { status: { in: ['COMPLETED', 'CANCELLED'] } },
-      ];
+      where.status = { in: ['COMPLETED', 'CANCELLED', 'NO_SHOW'] };
     }
 
     return this.prisma.appointment.findMany({

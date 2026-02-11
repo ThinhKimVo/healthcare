@@ -617,7 +617,6 @@ export class TherapistsService {
 
     if (status === 'upcoming') {
       statusFilter = { in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] };
-      dateFilter = { gte: now };
     } else if (status === 'past') {
       statusFilter = { in: [AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW] };
     }
@@ -689,7 +688,6 @@ export class TherapistsService {
     return this.prisma.appointment.findMany({
       where: {
         therapistId: therapist.id,
-        scheduledAt: { gte: new Date() },
         status: { in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] },
       },
       include: {
