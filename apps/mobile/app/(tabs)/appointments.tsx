@@ -256,12 +256,17 @@ export default function AppointmentsScreen() {
     );
   };
 
+  const handleChatPress = (appointment: Appointment) => {
+    router.push(`/chat/${appointment.id}` as any);
+  };
+
   const renderAppointmentCard = ({ item }: { item: Appointment }) => {
     const statusConfig = STATUS_CONFIG[item.status];
     const timeUntil = getTimeUntil(item.scheduledAt);
     const canJoin =
       (item.status === 'CONFIRMED' || item.status === 'IN_PROGRESS') &&
       new Date(item.scheduledAt).getTime() - Date.now() < 15 * 60 * 1000;
+    const canChat = item.status === 'CONFIRMED' || item.status === 'IN_PROGRESS';
 
     const isPast = activeTab === 'past';
     const canCancel = !isPast && (item.status === 'PENDING' || item.status === 'CONFIRMED');
@@ -339,7 +344,17 @@ export default function AppointmentsScreen() {
               </TouchableOpacity>
             )}
 
-            {canCancel && !canJoin && (
+            {canChat && (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.actionButtonOutline]}
+                onPress={() => handleChatPress(item)}
+              >
+                <Ionicons name="chatbubble-ellipses" size={16} color="#4F46E5" />
+                <Text style={styles.actionButtonOutlineText}>{t('appointments.chat')}</Text>
+              </TouchableOpacity>
+            )}
+
+            {canCancel && !canJoin && !canChat && (
               <TouchableOpacity
                 style={[styles.actionButton, styles.actionButtonOutline]}
                 onPress={() => handleCancelPress(item)}

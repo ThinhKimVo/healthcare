@@ -16,22 +16,7 @@ prepare_react_native_project!
 # Use static frameworks for Firebase
 $RNFirebaseAsStaticFramework = true
 
-# Pin Firebase to 11.x which has better compatibility
-$FirebaseSDKVersion = '11.6.0'
-
-# Enable modular headers for pods required by Firebase Swift packages
-# These are needed to import them from Swift when building as static libraries
-pod 'FirebaseAuthInterop', :modular_headers => true
-pod 'FirebaseAppCheckInterop', :modular_headers => true
-pod 'GoogleUtilities', :modular_headers => true
-pod 'RecaptchaInterop', :modular_headers => true
-pod 'FirebaseFirestoreInternal', :modular_headers => true
-pod 'FirebaseCoreInternal', :modular_headers => true
-pod 'FirebaseCore', :modular_headers => true
-pod 'FirebaseAuth', :modular_headers => true
-pod 'FirebaseCoreExtension', :modular_headers => true
-pod 'FirebaseFirestore', :modular_headers => true
-pod 'FirebaseSharedSwift', :modular_headers => true
+# Let RNFirebase use its default Firebase SDK version (12.8.0 for v23.x)'
 
 target 'Hopefull' do
   use_expo_modules!
@@ -54,8 +39,7 @@ target 'Hopefull' do
 
   config = use_native_modules!(config_command)
 
-  use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
-  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+  use_frameworks! :linkage => :static
 
   use_react_native!(
     :path => config[:reactNativePath],
@@ -72,15 +56,6 @@ target 'Hopefull' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
-
-    # Create a dummy FirebaseAuth-Swift.h header if it doesn't exist
-    # This fixes the issue where RNFBFirestore imports Firebase.h which imports FirebaseAuth-Swift.h
-    firebase_auth_path = "#{installer.sandbox.root}/Headers/Private/FirebaseAuth"
-    swift_header_path = "#{firebase_auth_path}/FirebaseAuth-Swift.h"
-    unless File.exist?(swift_header_path)
-      FileUtils.mkdir_p(firebase_auth_path) unless File.directory?(firebase_auth_path)
-      File.write(swift_header_path, "// Dummy Swift header\n")
-    end
 
     # This is necessary for Xcode 14, because it signs resource bundles by default
     # when building for devices.

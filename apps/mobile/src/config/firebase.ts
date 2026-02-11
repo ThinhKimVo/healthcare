@@ -49,7 +49,7 @@ const actionCodeSettings: FirebaseAuthTypes.ActionCodeSettings = {
   url: 'https://hopefull.page.link/verify', // Dynamic link domain
   handleCodeInApp: true,
   iOS: {
-    bundleId: 'com.hopefull.app',
+    bundleId: 'com.hopefull2.app',
   },
   android: {
     packageName: 'com.hopefull.app',

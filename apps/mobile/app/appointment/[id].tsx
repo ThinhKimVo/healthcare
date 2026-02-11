@@ -53,6 +53,10 @@ export default function AppointmentDetailsScreen() {
     appointment &&
     (appointment.status === 'PENDING' || appointment.status === 'CONFIRMED');
 
+  const canChat =
+    appointment &&
+    (appointment.status === 'CONFIRMED' || appointment.status === 'IN_PROGRESS');
+
   const canReschedule = canCancel && !isTherapist;
 
   const canLeaveReview =
@@ -433,6 +437,16 @@ export default function AppointmentDetailsScreen() {
           </TouchableOpacity>
         )}
 
+        {canChat && (
+          <TouchableOpacity
+            style={[styles.chatButton, canJoin && { marginTop: 12 }]}
+            onPress={() => router.push(`/chat/${appointment.id}` as any)}
+          >
+            <Ionicons name="chatbubble-ellipses" size={18} color="#4F46E5" />
+            <Text style={styles.chatButtonText}>{t('appointments.chat')}</Text>
+          </TouchableOpacity>
+        )}
+
         {canLeaveReview && (
           <TouchableOpacity
             style={styles.primaryButton}
@@ -791,6 +805,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#374151',
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    backgroundColor: '#EEF2FF',
+    gap: 8,
+  },
+  chatButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4F46E5',
   },
   dangerButton: {
     borderColor: '#FCA5A5',

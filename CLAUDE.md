@@ -54,9 +54,7 @@ This is a **pnpm monorepo** managed by **Turborepo** with four apps and shared p
 | App | Tech Stack | Port | Package Name |
 |-----|------------|------|--------------|
 | `apps/api` | NestJS, Prisma, PostgreSQL | 3001 | @hopefull/api |
-| `apps/admin` | React, Vite, TailwindCSS | 3000 | @hopefull/admin |
 | `apps/mobile` | React Native, Expo | - | @hopefull/mobile |
-| `apps/web` | (placeholder) | - | @hopefull/web |
 
 ### Shared Packages
 

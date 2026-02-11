@@ -384,6 +384,7 @@
       "success": "Thank You!",
       "successMessage": "Your feedback helps other patients find the right therapist."
     },
+    "chat": "Chat",
     "empty": {
       "upcoming": "No upcoming appointments",
       "past": "No past appointments",

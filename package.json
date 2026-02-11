@@ -16,7 +16,6 @@
     "db:seed": "pnpm --filter @hopefull/api db:seed",
     "api:dev": "pnpm --filter @hopefull/api dev",
     "mobile:dev": "pnpm --filter @hopefull/mobile dev",
-    "admin:dev": "pnpm --filter @hopefull/admin dev",
     "web:dev": "pnpm --filter @hopefull/web dev"
   },
   "devDependencies": {

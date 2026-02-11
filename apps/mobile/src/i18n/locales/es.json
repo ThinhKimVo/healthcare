@@ -372,6 +372,7 @@
       "success": "¡Gracias!",
       "successMessage": "Tu comentario ayuda a otros pacientes a encontrar el terapeuta adecuado."
     },
+    "chat": "Chat",
     "empty": {
       "upcoming": "No hay citas próximas",
       "past": "No hay citas pasadas",
