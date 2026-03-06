@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { RemindersService } from '../reminders/reminders.service';
 import { AppointmentStatus, AppointmentType, Prisma } from '@prisma/client';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class AppointmentsService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private remindersService: RemindersService,
   ) {}
 
   async create(data: {
@@ -264,6 +266,12 @@ export class AppointmentsService {
       dateTime,
     );
 
+    // Schedule session reminders (24H, 1H, 15MIN)
+    await this.remindersService.createRemindersForAppointment(
+      appointment.id,
+      appointment.scheduledAt,
+    );
+
     return updatedAppointment;
   }
 
@@ -490,6 +498,22 @@ export class AppointmentsService {
         totalReviews: stats._count,
       },
     });
+
+    // Notify therapist of new feedback
+    const therapist = await this.prisma.therapist.findUnique({
+      where: { id: appointment.therapistId },
+      include: { user: { select: { id: true } } },
+    });
+
+    if (therapist) {
+      await this.notificationsService.sendSessionFeedback(
+        therapist.user.id,
+        appointmentId,
+        data.rating,
+        data.feedback,
+        data.isAnonymous,
+      );
+    }
 
     return review;
   }

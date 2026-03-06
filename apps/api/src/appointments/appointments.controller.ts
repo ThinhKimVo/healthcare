@@ -12,13 +12,19 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AppointmentsService } from './appointments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @ApiTags('Appointments')
 @Controller('appointments')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class AppointmentsController {
-  constructor(private appointmentsService: AppointmentsService) {}
+  constructor(
+    private appointmentsService: AppointmentsService,
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new appointment' })
@@ -115,6 +121,20 @@ export class AppointmentsController {
     @Body() body: { sessionNotes?: string },
   ) {
     return this.appointmentsService.complete(id, req.user.id, body.sessionNotes);
+  }
+
+  @Post(':id/test-reminder')
+  @ApiOperation({ summary: 'DEV ONLY: trigger a reminder in ~10 seconds' })
+  @ApiQuery({ name: 'type', required: false, enum: ['24H', '1H', '15MIN'] })
+  async testReminder(@Param('id') id: string, @Query('type') type = '15MIN') {
+    await this.prisma.appointmentReminder.create({
+      data: {
+        appointmentId: id,
+        reminderType: type,
+        scheduledFor: new Date(Date.now() + 10_000),
+      },
+    });
+    return { ok: true, firesIn: '~10 seconds', reminderType: type };
   }
 
   @Post(':id/review')

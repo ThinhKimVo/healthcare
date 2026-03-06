@@ -301,7 +301,14 @@
       "noFeedback": "لم تترك تقييماً بعد",
       "joinSession": "انضم للجلسة",
       "reschedule": "إعادة الجدولة",
-      "cancelAppointment": "إلغاء الموعد"
+      "cancelAppointment": "إلغاء الموعد",
+      "scheduledCall": "مكالمة فيديو",
+      "instantCall": "مكالمة فورية",
+      "rescheduleComingSoon": "ستتوفر إعادة الجدولة قريباً.",
+      "viewSummary": "عرض ملخص الجلسة",
+      "leaveFeedback": "ترك تقييم",
+      "bookAgain": "حجز مجدداً",
+      "join": "انضم للجلسة"
     },
     "cancel": {
       "title": "إلغاء الموعد",
@@ -355,11 +362,10 @@
       "selectAll": "اختر كل ما ينطبق",
       "feedback": {
         "professional": "محترف",
-        "empathetic": "متعاطف",
         "helpful": "مفيد",
         "goodListener": "مستمع جيد",
-        "knowledgeable": "ذو معرفة",
-        "punctual": "ملتزم بالوقت"
+        "patient": "صبور",
+        "insightful": "ثاقب النظر"
       },
       "additionalComments": "تعليقات إضافية",
       "optional": "اختياري",
@@ -370,7 +376,23 @@
       "submit": "إرسال التقييم",
       "pleaseSelectRating": "يرجى اختيار تقييم",
       "success": "شكراً لك!",
-      "successMessage": "تساعد ملاحظاتك المرضى الآخرين في العثور على المعالج المناسب."
+      "successMessage": "تم إرسال ملاحظاتك بنجاح.",
+      "thankYouDescription": "تساعد ملاحظاتك المرضى الآخرين في العثور على المعالج المناسب وتحسين جودة الرعاية."
+    },
+    "summary": {
+      "title": "ملخص الجلسة",
+      "therapist": "المعالج",
+      "date": "التاريخ",
+      "time": "الوقت",
+      "duration": "المدة",
+      "amountPaid": "المبلغ المدفوع",
+      "minutesFormat": "{{duration}} دقيقة",
+      "share": "مشاركة الملخص",
+      "bookNextSession": "حجز الجلسة التالية",
+      "downloadReceipt": "تحميل الإيصال",
+      "nextAppointment": "الموعد التالي",
+      "sessionNotes": "ملاحظات الجلسة",
+      "noNotes": "لم يتم تقديم ملاحظات الجلسة"
     },
     "chat": "محادثة",
     "empty": {
@@ -378,6 +400,64 @@
       "past": "لا توجد مواعيد سابقة",
       "cancelled": "لا توجد مواعيد ملغاة",
       "bookFirst": "احجز جلستك الأولى مع معالج"
+    }
+  },
+  "payment": {
+    "methods": {
+      "title": "طرق الدفع",
+      "savedCards": "البطاقات المحفوظة",
+      "addMethod": "إضافة طريقة دفع",
+      "noMethods": "لا توجد طرق دفع",
+      "noMethodsSubtitle": "أضف بطاقة للدفع مقابل جلساتك",
+      "securedByStripe": "مؤمّن بواسطة Stripe",
+      "default": "افتراضي",
+      "verified": "موثّق",
+      "unverified": "غير موثّق",
+      "setDefault": "تعيين كافتراضي",
+      "verify": "التحقق من البطاقة",
+      "delete": "حذف البطاقة",
+      "deleteConfirmTitle": "حذف البطاقة",
+      "deleteConfirmMessage": "هل أنت متأكد من حذف هذه البطاقة؟ لا يمكن التراجع عن هذا الإجراء.",
+      "verifyTitle": "التحقق من البطاقة",
+      "verifyMessage": "سنقوم بفرض رسوم $0.01 للتحقق من بطاقتك وإعادتها فوراً.",
+      "verifySuccess": "تم التحقق من بطاقتك بنجاح.",
+      "verifyFailed": "فشل التحقق من البطاقة. يرجى التحقق من تفاصيل بطاقتك.",
+      "addSuccess": "تمت إضافة البطاقة بنجاح!",
+      "expires": "تنتهي"
+    },
+    "addMethod": {
+      "title": "إضافة طريقة دفع",
+      "cardTab": "بطاقة",
+      "walletTab": "المحفظة الرقمية",
+      "cardDetails": "تفاصيل البطاقة",
+      "acceptedCards": "نقبل Visa وMastercard وAmex",
+      "billingAddress": "عنوان الفوترة (اختياري)",
+      "fullName": "الاسم الكامل",
+      "streetAddress": "عنوان الشارع",
+      "city": "المدينة",
+      "zip": "الرمز البريدي",
+      "saveConsent": "حفظ هذه البطاقة للمدفوعات المستقبلية. تفاصيل بطاقتك مشفرة ومخزنة بأمان.",
+      "verifyNotice": "سيتم فرض رسوم $0.01 للتحقق من بطاقتك وإعادتها فوراً.",
+      "addCard": "إضافة بطاقة",
+      "applePay": "Apple Pay",
+      "googlePay": "Google Pay",
+      "walletSubtitle": "اربط محفظتك الرقمية المفضلة لمدفوعات أسرع.",
+      "secureFooter": "المدفوعات مؤمّنة بواسطة Stripe · متوافق مع PCI DSS",
+      "incompleteCard": "يرجى إدخال تفاصيل البطاقة كاملة.",
+      "consentRequired": "يرجى الموافقة على حفظ بطاقتك للمتابعة."
+    },
+    "history": {
+      "title": "سجل المدفوعات",
+      "totalTransactions": "إجمالي المعاملات",
+      "totalPaid": "إجمالي المدفوع",
+      "noPayments": "لا توجد مدفوعات بعد",
+      "noPaymentsSubtitle": "سيظهر سجل مدفوعاتك هنا بعد جلستك الأولى.",
+      "status": {
+        "pending": "قيد الانتظار",
+        "success": "مدفوع",
+        "failed": "فاشل",
+        "refunded": "مُستردّ"
+      }
     }
   },
   "profile": {

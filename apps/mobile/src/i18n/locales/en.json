@@ -313,7 +313,14 @@
       "cancellationReason": "Cancellation Reason",
       "joinSession": "Join Session",
       "reschedule": "Reschedule",
-      "cancelAppointment": "Cancel Appointment"
+      "cancelAppointment": "Cancel Appointment",
+      "scheduledCall": "Video Call",
+      "instantCall": "Instant Call",
+      "rescheduleComingSoon": "Rescheduling will be available soon.",
+      "viewSummary": "View Session Summary",
+      "leaveFeedback": "Leave Feedback",
+      "bookAgain": "Book Again",
+      "join": "Join Session"
     },
     "cancel": {
       "title": "Cancel Appointment",
@@ -367,11 +374,10 @@
       "selectAll": "Select all that apply",
       "feedback": {
         "professional": "Professional",
-        "empathetic": "Empathetic",
         "helpful": "Helpful",
         "goodListener": "Good Listener",
-        "knowledgeable": "Knowledgeable",
-        "punctual": "Punctual"
+        "patient": "Patient",
+        "insightful": "Insightful"
       },
       "additionalComments": "Additional Comments",
       "optional": "Optional",
@@ -382,7 +388,23 @@
       "submit": "Submit Review",
       "pleaseSelectRating": "Please select a rating",
       "success": "Thank You!",
-      "successMessage": "Your feedback helps other patients find the right therapist."
+      "successMessage": "Your feedback has been submitted successfully.",
+      "thankYouDescription": "Your feedback helps other patients find the right therapist and improves the quality of care."
+    },
+    "summary": {
+      "title": "Session Summary",
+      "therapist": "Therapist",
+      "date": "Date",
+      "time": "Time",
+      "duration": "Duration",
+      "amountPaid": "Amount Paid",
+      "minutesFormat": "{{duration}} minutes",
+      "share": "Share Summary",
+      "bookNextSession": "Book Next Session",
+      "downloadReceipt": "Download Receipt",
+      "nextAppointment": "Next Appointment",
+      "sessionNotes": "Session Notes",
+      "noNotes": "No session notes provided"
     },
     "chat": "Chat",
     "empty": {
@@ -390,6 +412,64 @@
       "past": "No past appointments",
       "cancelled": "No cancelled appointments",
       "bookFirst": "Book your first session with a therapist"
+    }
+  },
+  "payment": {
+    "methods": {
+      "title": "Payment Methods",
+      "savedCards": "Saved Cards",
+      "addMethod": "Add Payment Method",
+      "noMethods": "No payment methods",
+      "noMethodsSubtitle": "Add a card to pay for your sessions",
+      "securedByStripe": "Secured by Stripe",
+      "default": "Default",
+      "verified": "Verified",
+      "unverified": "Unverified",
+      "setDefault": "Set as Default",
+      "verify": "Verify Card",
+      "delete": "Remove Card",
+      "deleteConfirmTitle": "Remove Card",
+      "deleteConfirmMessage": "Are you sure you want to remove this card? This action cannot be undone.",
+      "verifyTitle": "Verify Card",
+      "verifyMessage": "We'll charge $0.01 to verify this card, then immediately refund it.",
+      "verifySuccess": "Your card has been verified successfully.",
+      "verifyFailed": "Card verification failed. Please check your card details.",
+      "addSuccess": "Card added successfully!",
+      "expires": "Expires"
+    },
+    "addMethod": {
+      "title": "Add Payment Method",
+      "cardTab": "Card",
+      "walletTab": "Digital Wallet",
+      "cardDetails": "Card Details",
+      "acceptedCards": "We accept Visa, Mastercard, and Amex",
+      "billingAddress": "Billing Address (Optional)",
+      "fullName": "Full name",
+      "streetAddress": "Street address",
+      "city": "City",
+      "zip": "ZIP",
+      "saveConsent": "Save this card for future payments. Your card details are encrypted and stored securely.",
+      "verifyNotice": "A $0.01 authorization will be placed to verify your card and immediately refunded.",
+      "addCard": "Add Card",
+      "applePay": "Apple Pay",
+      "googlePay": "Google Pay",
+      "walletSubtitle": "Connect your preferred digital wallet for faster, one-tap payments.",
+      "secureFooter": "Payments secured by Stripe · PCI DSS compliant",
+      "incompleteCard": "Please enter complete card details.",
+      "consentRequired": "Please agree to save your card to continue."
+    },
+    "history": {
+      "title": "Payment History",
+      "totalTransactions": "Total Transactions",
+      "totalPaid": "Total Paid",
+      "noPayments": "No payments yet",
+      "noPaymentsSubtitle": "Your payment history will appear here after your first session.",
+      "status": {
+        "pending": "Pending",
+        "success": "Paid",
+        "failed": "Failed",
+        "refunded": "Refunded"
+      }
     }
   },
   "profile": {

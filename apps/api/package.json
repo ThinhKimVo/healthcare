@@ -28,6 +28,7 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.4.22",
+    "@nestjs/schedule": "^6.1.1",
     "@nestjs/swagger": "^8.1.1",
     "@prisma/client": "^6.19.2",
     "agora-token": "^2.0.5",

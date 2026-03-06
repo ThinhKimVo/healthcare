@@ -36,4 +36,14 @@ export const paymentsService = {
     const { data } = await api.get(`/payments/history?page=${page}&limit=${limit}`);
     return data;
   },
+
+  async createSetupIntent(): Promise<{ clientSecret: string }> {
+    const { data } = await api.post('/payments/setup-intent');
+    return data;
+  },
+
+  async verifyCard(id: string): Promise<{ verified: boolean }> {
+    const { data } = await api.post(`/payments/methods/${id}/verify`);
+    return data;
+  },
 };

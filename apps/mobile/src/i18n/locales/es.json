@@ -301,7 +301,14 @@
       "noFeedback": "Aún no has dejado comentario",
       "joinSession": "Unirse a la Sesión",
       "reschedule": "Reprogramar",
-      "cancelAppointment": "Cancelar Cita"
+      "cancelAppointment": "Cancelar Cita",
+      "scheduledCall": "Videollamada",
+      "instantCall": "Llamada Instantánea",
+      "rescheduleComingSoon": "La reprogramación estará disponible pronto.",
+      "viewSummary": "Ver Resumen de Sesión",
+      "leaveFeedback": "Dejar Comentario",
+      "bookAgain": "Reservar de Nuevo",
+      "join": "Unirse a la Sesión"
     },
     "cancel": {
       "title": "Cancelar Cita",
@@ -355,11 +362,10 @@
       "selectAll": "Selecciona todos los que apliquen",
       "feedback": {
         "professional": "Profesional",
-        "empathetic": "Empático",
         "helpful": "Útil",
         "goodListener": "Buen Oyente",
-        "knowledgeable": "Conocedor",
-        "punctual": "Puntual"
+        "patient": "Paciente",
+        "insightful": "Perspicaz"
       },
       "additionalComments": "Comentarios Adicionales",
       "optional": "Opcional",
@@ -370,7 +376,23 @@
       "submit": "Enviar Reseña",
       "pleaseSelectRating": "Por favor selecciona una calificación",
       "success": "¡Gracias!",
-      "successMessage": "Tu comentario ayuda a otros pacientes a encontrar el terapeuta adecuado."
+      "successMessage": "Tu comentario ha sido enviado exitosamente.",
+      "thankYouDescription": "Tu comentario ayuda a otros pacientes a encontrar el terapeuta adecuado y mejora la calidad de la atención."
+    },
+    "summary": {
+      "title": "Resumen de Sesión",
+      "therapist": "Terapeuta",
+      "date": "Fecha",
+      "time": "Hora",
+      "duration": "Duración",
+      "amountPaid": "Monto Pagado",
+      "minutesFormat": "{{duration}} minutos",
+      "share": "Compartir Resumen",
+      "bookNextSession": "Reservar Próxima Sesión",
+      "downloadReceipt": "Descargar Recibo",
+      "nextAppointment": "Próxima Cita",
+      "sessionNotes": "Notas de Sesión",
+      "noNotes": "No se proporcionaron notas de sesión"
     },
     "chat": "Chat",
     "empty": {
@@ -378,6 +400,64 @@
       "past": "No hay citas pasadas",
       "cancelled": "No hay citas canceladas",
       "bookFirst": "Reserva tu primera sesión con un terapeuta"
+    }
+  },
+  "payment": {
+    "methods": {
+      "title": "Métodos de Pago",
+      "savedCards": "Tarjetas Guardadas",
+      "addMethod": "Agregar Método de Pago",
+      "noMethods": "Sin métodos de pago",
+      "noMethodsSubtitle": "Agrega una tarjeta para pagar tus sesiones",
+      "securedByStripe": "Protegido por Stripe",
+      "default": "Predeterminado",
+      "verified": "Verificado",
+      "unverified": "Sin verificar",
+      "setDefault": "Establecer como predeterminado",
+      "verify": "Verificar Tarjeta",
+      "delete": "Eliminar Tarjeta",
+      "deleteConfirmTitle": "Eliminar Tarjeta",
+      "deleteConfirmMessage": "¿Estás seguro de que deseas eliminar esta tarjeta? Esta acción no se puede deshacer.",
+      "verifyTitle": "Verificar Tarjeta",
+      "verifyMessage": "Realizaremos un cargo de $0.01 para verificar tu tarjeta y lo reembolsaremos inmediatamente.",
+      "verifySuccess": "Tu tarjeta ha sido verificada exitosamente.",
+      "verifyFailed": "La verificación de la tarjeta falló. Por favor verifica los detalles.",
+      "addSuccess": "¡Tarjeta agregada exitosamente!",
+      "expires": "Vence"
+    },
+    "addMethod": {
+      "title": "Agregar Método de Pago",
+      "cardTab": "Tarjeta",
+      "walletTab": "Billetera Digital",
+      "cardDetails": "Detalles de la Tarjeta",
+      "acceptedCards": "Aceptamos Visa, Mastercard y Amex",
+      "billingAddress": "Dirección de Facturación (Opcional)",
+      "fullName": "Nombre completo",
+      "streetAddress": "Dirección",
+      "city": "Ciudad",
+      "zip": "Código Postal",
+      "saveConsent": "Guardar esta tarjeta para pagos futuros. Los detalles están cifrados y almacenados de forma segura.",
+      "verifyNotice": "Se realizará una autorización de $0.01 para verificar tu tarjeta y se reembolsará inmediatamente.",
+      "addCard": "Agregar Tarjeta",
+      "applePay": "Apple Pay",
+      "googlePay": "Google Pay",
+      "walletSubtitle": "Conecta tu billetera digital preferida para pagos más rápidos.",
+      "secureFooter": "Pagos protegidos por Stripe · Cumplimiento PCI DSS",
+      "incompleteCard": "Por favor ingresa los detalles completos de la tarjeta.",
+      "consentRequired": "Por favor acepta guardar tu tarjeta para continuar."
+    },
+    "history": {
+      "title": "Historial de Pagos",
+      "totalTransactions": "Total de Transacciones",
+      "totalPaid": "Total Pagado",
+      "noPayments": "Sin pagos aún",
+      "noPaymentsSubtitle": "Tu historial de pagos aparecerá aquí después de tu primera sesión.",
+      "status": {
+        "pending": "Pendiente",
+        "success": "Pagado",
+        "failed": "Fallido",
+        "refunded": "Reembolsado"
+      }
     }
   },
   "profile": {

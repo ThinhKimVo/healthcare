@@ -2,6 +2,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointmentsService, CreateAppointmentData, CreateReviewData } from '../services';
 import type { AppointmentFilters } from '../types';
 
+/**
+ * Returns the count of confirmed appointments starting within the next 24 hours.
+ * Used to drive the Appointments tab badge.
+ */
+export function useUpcomingSessionBadge() {
+  return useQuery({
+    queryKey: ['appointments', { status: 'upcoming' }],
+    queryFn: () => appointmentsService.findByUser({ status: 'upcoming' }),
+    select: (appointments) => {
+      const now = Date.now();
+      const in24h = now + 24 * 60 * 60 * 1000;
+      return appointments.filter((a) => {
+        const t = new Date(a.scheduledAt).getTime();
+        return (
+          (a.status === 'CONFIRMED' || a.status === 'PENDING') &&
+          t > now &&
+          t <= in24h
+        );
+      }).length;
+    },
+    refetchInterval: 60_000, // refresh every minute
+  });
+}
+
 export function useAppointments(filters?: AppointmentFilters) {
   return useQuery({
     queryKey: ['appointments', filters],

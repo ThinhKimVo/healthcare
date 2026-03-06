@@ -81,37 +81,41 @@ class VideoSessionService implements IRtcEngineEventHandler {
     try {
       this.engine = createAgoraRtcEngine();
       console.log('[Agora] Engine created');
+    } catch (e) { console.error('[Agora] createAgoraRtcEngine failed:', e); throw e; }
 
-      this.engine.initialize({
+    try {
+      this.engine!.initialize({
         appId,
         channelProfile: ChannelProfileType.ChannelProfileCommunication,
       });
       console.log('[Agora] Engine initialized');
+    } catch (e) { console.error('[Agora] initialize() failed:', e); throw e; }
 
-      this.engine.registerEventHandler(this);
+    try {
+      this.engine!.registerEventHandler(this);
       console.log('[Agora] Event handler registered');
+    } catch (e) { console.error('[Agora] registerEventHandler() failed:', e); throw e; }
 
-      // Enable video
-      this.engine.enableVideo();
-      this.engine.enableAudio();
+    try {
+      this.engine!.enableVideo();
+      this.engine!.enableAudio();
       console.log('[Agora] Video and audio enabled');
+    } catch (e) { console.error('[Agora] enableVideo/Audio() failed:', e); throw e; }
 
-      // Set video encoder configuration
-      this.engine.setVideoEncoderConfiguration({
+    try {
+      this.engine!.setVideoEncoderConfiguration({
         dimensions: { width: 640, height: 480 },
         frameRate: 30,
-        bitrate: 0, // Auto
+        bitrate: 0,
       });
+    } catch (e) { console.error('[Agora] setVideoEncoderConfiguration() failed:', e); throw e; }
 
-      // Start local preview
-      this.engine.startPreview();
+    try {
+      this.engine!.startPreview();
       console.log('[Agora] Local preview started');
+    } catch (e) { console.error('[Agora] startPreview() failed:', e); throw e; }
 
-      return this.engine;
-    } catch (error) {
-      console.error('[Agora] Failed to initialize:', error);
-      throw error;
-    }
+    return this.engine!;
   }
 
   /**

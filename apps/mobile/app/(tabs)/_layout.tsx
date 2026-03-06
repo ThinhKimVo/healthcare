@@ -1,12 +1,28 @@
 import { useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../src/store/auth';
 import { CommonActions, useNavigation } from '@react-navigation/native';
+import { useUpcomingSessionBadge } from '../../src/hooks/useAppointments';
 
 // Module-level flag to prevent redirect loops
 let isRedirectingToWelcome = false;
+
+function AppointmentsBadgeIcon({ color, size }: { color: string; size: number }) {
+  const { data: badgeCount = 0 } = useUpcomingSessionBadge();
+  return (
+    <View>
+      <Ionicons name="calendar" size={size} color={color} />
+      {badgeCount > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badgeCount > 9 ? '9+' : badgeCount}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function TabsLayout() {
   const { t } = useTranslation();
@@ -59,17 +75,15 @@ export default function TabsLayout() {
         },
         headerShown: false,
         tabBarIcon: ({ color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'home';
-
-          if (route.name === 'index') {
-            iconName = 'home';
-          } else if (route.name === 'appointments') {
-            iconName = 'calendar';
-          } else if (route.name === 'therapists') {
-            iconName = 'people';
-          } else if (route.name === 'profile') {
-            iconName = 'person';
+          if (route.name === 'appointments' && !isTherapist) {
+            return <AppointmentsBadgeIcon color={color} size={size} />;
           }
+
+          let iconName: keyof typeof Ionicons.glyphMap = 'home';
+          if (route.name === 'index') iconName = 'home';
+          else if (route.name === 'appointments') iconName = 'calendar';
+          else if (route.name === 'therapists') iconName = 'people';
+          else if (route.name === 'profile') iconName = 'person';
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -82,3 +96,26 @@ export default function TabsLayout() {
     />
   );
 }
+
+const styles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: '#fff',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+    lineHeight: 12,
+  },
+});

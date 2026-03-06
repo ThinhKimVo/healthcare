@@ -22,6 +22,7 @@ import { callSignalingService, CallDocument, ParticipantMediaState } from '@/ser
 import { useAuthStore } from '@/store/auth';
 import { videoSessionService } from '@/services/video-session';
 import { generateAgoraToken } from '@/services/agora';
+import { RateSessionModal } from '@/components/session/RateSessionModal';
 
 // Safe navigation helper - navigates to home instead of back when there's no history
 const navigateToHome = (router: any, isTherapist: boolean) => {
@@ -122,6 +123,9 @@ export default function VideoSessionScreen() {
   // Agora state
   const [remoteUid, setRemoteUid] = useState<number | null>(null);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
+
+  // Rate session modal
+  const [showRateModal, setShowRateModal] = useState(false);
 
   // UI State
   const [showControls, setShowControls] = useState(true);
@@ -470,13 +474,23 @@ export default function VideoSessionScreen() {
       }
     }
 
-    navigateToHome(router, isTherapist);
-  }, [router, callId]);
+    // Show rating modal for patients after scheduled sessions
+    if (!isTherapist && !isInstantCall) {
+      setShowRateModal(true);
+    } else {
+      navigateToHome(router, isTherapist);
+    }
+  }, [router, callId, isTherapist, isInstantCall]);
 
   const onEndCallPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     handleEndCall();
   }, [handleEndCall]);
+
+  const handleRateModalClose = useCallback(() => {
+    setShowRateModal(false);
+    navigateToHome(router, isTherapist);
+  }, [router, isTherapist]);
 
   const handleControlPress = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -559,6 +573,14 @@ export default function VideoSessionScreen() {
   }
 
   return (
+    <>
+    <RateSessionModal
+      visible={showRateModal}
+      appointmentId={isInstantCall ? null : id || null}
+      therapistName={remoteName !== 'Participant' ? remoteName : undefined}
+      therapistAvatar={remoteAvatar}
+      onClose={handleRateModalClose}
+    />
     <TouchableOpacity
       style={styles.container}
       activeOpacity={1}
@@ -741,6 +763,7 @@ export default function VideoSessionScreen() {
         </Animated.View>
       )}
     </TouchableOpacity>
+    </>
   );
 }
 

@@ -5,13 +5,13 @@ const config = getDefaultConfig(__dirname);
 
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, '../..');
-const chatPkgRoot = path.resolve(monorepoRoot, '../rn-firebase-chat');
+// const chatPkgRoot = path.resolve(monorepoRoot, '../rn-firebase-chat');
 
 // Watch the monorepo and the linked rn-firebase-chat lib folder
-config.watchFolders = [
-  monorepoRoot,
-  path.resolve(chatPkgRoot, 'lib'),
-];
+// config.watchFolders = [
+//   monorepoRoot,
+//   path.resolve(chatPkgRoot, 'lib'),
+// ];
 
 // Resolve all modules from the project's node_modules first,
 // so rn-firebase-chat's own node_modules are never used
@@ -21,9 +21,9 @@ config.resolver.nodeModulesPaths = [
 ];
 
 // Block Metro from crawling rn-firebase-chat/node_modules
-config.resolver.blockList = [
-  new RegExp(path.resolve(chatPkgRoot, 'node_modules').replace(/[/\\]/g, '[/\\\\]') + '.*'),
-];
+// config.resolver.blockList = [
+//   new RegExp(path.resolve(chatPkgRoot, 'node_modules').replace(/[/\\]/g, '[/\\\\]') + '.*'),
+// ];
 
 // Follow symlinks
 config.resolver.unstable_enableSymlinks = true;

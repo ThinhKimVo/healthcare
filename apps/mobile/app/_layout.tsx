@@ -5,11 +5,14 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { I18nextProvider } from 'react-i18next';
 import { ChatProvider } from 'rn-firebase-chat';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { useAuthStore } from '@/store/auth';
 import { useLocaleStore } from '@/store/locale';
 import { configureGoogleSignIn } from '@/services/social-auth';
 import { pushNotificationService } from '@/services';
 import i18n from '@/i18n';
+
+const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -158,15 +161,17 @@ export default function RootLayout() {
   return (
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={queryClient}>
-        {chatUserInfo ? (
-          <ChatProvider
-            {...{ userInfo: chatUserInfo, enableEncrypt: false } as any}
-          >
-            {content}
-          </ChatProvider>
-        ) : (
-          content
-        )}
+        <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} merchantIdentifier="merchant.com.hopefull">
+          {chatUserInfo ? (
+            <ChatProvider
+              {...{ userInfo: chatUserInfo, enableEncrypt: false } as any}
+            >
+              {content}
+            </ChatProvider>
+          ) : (
+            content
+          )}
+        </StripeProvider>
       </QueryClientProvider>
     </I18nextProvider>
   );

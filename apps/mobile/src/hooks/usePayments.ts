@@ -47,3 +47,14 @@ export function useDeletePaymentMethod() {
     },
   });
 }
+
+export function useVerifyCard() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => paymentsService.verifyCard(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payment-methods'] });
+    },
+  });
+}

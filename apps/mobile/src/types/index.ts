@@ -143,6 +143,7 @@ export interface PaymentMethod {
   expiryMonth?: number;
   expiryYear?: number;
   isDefault: boolean;
+  isVerified: boolean;
   createdAt: string;
 }
 

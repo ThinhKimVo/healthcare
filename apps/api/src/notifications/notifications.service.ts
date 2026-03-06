@@ -218,6 +218,70 @@ export class NotificationsService {
     });
   }
 
+  // ─── Session Reminder: Patient ─────────────────────────────────────────────
+
+  async sendReminder24H(userId: string, appointmentId: string, therapistName: string, dateTime: string) {
+    return this.create({
+      userId,
+      type: 'APPOINTMENT_REMINDER',
+      title: '📅 Session Tomorrow',
+      message: `Don't forget — your session with ${therapistName} is scheduled for ${dateTime}.`,
+      data: { appointmentId, screen: 'appointment-details', reminderType: '24H' },
+    });
+  }
+
+  async sendReminder1H(userId: string, appointmentId: string, therapistName: string) {
+    return this.create({
+      userId,
+      type: 'APPOINTMENT_REMINDER',
+      title: '⏰ Session in 1 Hour',
+      message: `Your session with ${therapistName} starts in 1 hour. Get ready!`,
+      data: { appointmentId, screen: 'appointment-details', reminderType: '1H' },
+    });
+  }
+
+  async sendReminder15Min(userId: string, appointmentId: string, therapistName: string) {
+    return this.create({
+      userId,
+      type: 'APPOINTMENT_REMINDER',
+      title: '🚀 Session Starting Soon',
+      message: `Your session with ${therapistName} starts in 15 minutes. Tap to join.`,
+      data: { appointmentId, screen: 'join-session', reminderType: '15MIN' },
+    });
+  }
+
+  // ─── Session Reminder: Therapist ───────────────────────────────────────────
+
+  async sendTherapistReminder24H(therapistUserId: string, appointmentId: string, patientName: string, dateTime: string) {
+    return this.create({
+      userId: therapistUserId,
+      type: 'APPOINTMENT_REMINDER',
+      title: '📅 Session Tomorrow',
+      message: `You have a session with ${patientName} scheduled for ${dateTime}.`,
+      data: { appointmentId, screen: 'appointment-details', reminderType: '24H' },
+    });
+  }
+
+  async sendTherapistReminder1H(therapistUserId: string, appointmentId: string, patientName: string) {
+    return this.create({
+      userId: therapistUserId,
+      type: 'APPOINTMENT_REMINDER',
+      title: '⏰ Session in 1 Hour',
+      message: `Your session with ${patientName} starts in 1 hour.`,
+      data: { appointmentId, screen: 'appointment-details', reminderType: '1H' },
+    });
+  }
+
+  async sendTherapistReminder15Min(therapistUserId: string, appointmentId: string, patientName: string) {
+    return this.create({
+      userId: therapistUserId,
+      type: 'APPOINTMENT_REMINDER',
+      title: '🚀 Session Starting Soon',
+      message: `Your session with ${patientName} starts in 15 minutes. Tap to join.`,
+      data: { appointmentId, screen: 'join-session', reminderType: '15MIN' },
+    });
+  }
+
   async sendPaymentReceipt(userId: string, paymentId: string, amount: number) {
     const formattedAmount = (amount / 100).toFixed(2);
     return this.create({
@@ -246,6 +310,29 @@ export class NotificationsService {
       title,
       message,
       data,
+    });
+  }
+
+  // Session feedback received - notify therapist
+  async sendSessionFeedback(
+    therapistUserId: string,
+    appointmentId: string,
+    rating: number,
+    feedback?: string,
+    isAnonymous?: boolean,
+  ) {
+    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+    const reviewerLabel = isAnonymous ? 'A patient (anonymous)' : 'A patient';
+    const message = feedback
+      ? `${reviewerLabel} rated your session ${stars} (${rating}/5): "${feedback}"`
+      : `${reviewerLabel} rated your session ${stars} (${rating}/5).`;
+
+    return this.create({
+      userId: therapistUserId,
+      type: 'SYSTEM',
+      title: 'New Session Feedback',
+      message,
+      data: { appointmentId, screen: 'appointment-details' },
     });
   }
 

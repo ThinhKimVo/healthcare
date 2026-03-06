@@ -251,6 +251,12 @@ class PushNotificationService {
           router.push(`/appointment/${appointmentId}` as Href);
         }
         break;
+      case 'join-session':
+        // 15-min reminder deep link — go directly to the session
+        if (appointmentId) {
+          router.push(`/session/${appointmentId}` as Href);
+        }
+        break;
       case 'chat':
         if (appointmentId) {
           router.push(`/chat/${appointmentId}` as Href);
@@ -259,11 +265,9 @@ class PushNotificationService {
         }
         break;
       case 'payment-details':
-        // Navigate to appointments as payment details screen may not exist
         router.push('/(tabs)/appointments' as Href);
         break;
       default:
-        // Default: open notifications screen
         router.push('/notifications' as Href);
         break;
     }

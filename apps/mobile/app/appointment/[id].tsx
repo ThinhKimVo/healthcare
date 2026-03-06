@@ -270,7 +270,7 @@ export default function AppointmentDetailsScreen() {
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>{t('appointments.details.type')}</Text>
               <Text style={styles.detailValue}>
-                {appointment.type === 'INSTANT' ? t('appointments.instantCall') : t('appointments.scheduledCall')}
+                {appointment.type === 'INSTANT' ? t('appointments.details.instantCall') : t('appointments.details.scheduledCall')}
               </Text>
             </View>
           </View>
@@ -433,7 +433,7 @@ export default function AppointmentDetailsScreen() {
             onPress={() => router.push(`/session/${appointment.id}`)}
           >
             <Ionicons name="videocam" size={20} color="#FFFFFF" />
-            <Text style={styles.primaryButtonText}>{t('appointments.join')}</Text>
+            <Text style={styles.primaryButtonText}>{t('appointments.details.join')}</Text>
           </TouchableOpacity>
         )}
 
@@ -447,23 +447,35 @@ export default function AppointmentDetailsScreen() {
           </TouchableOpacity>
         )}
 
-        {canLeaveReview && (
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => router.push(`/appointment/${appointment.id}/review`)}
-          >
-            <Ionicons name="star-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.primaryButtonText}>{t('appointments.leaveFeedback')}</Text>
-          </TouchableOpacity>
+        {/* Completed appointment actions */}
+        {appointment.status === 'COMPLETED' && !isTherapist && (
+          <>
+            {canLeaveReview ? (
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => router.push(`/appointment/${appointment.id}/review`)}
+              >
+                <Ionicons name="star-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.primaryButtonText}>{t('appointments.details.leaveFeedback')}</Text>
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity
+              style={[styles.summaryButton, canLeaveReview && { marginTop: 10 }]}
+              onPress={() => router.push(`/appointment/${appointment.id}/summary` as any)}
+            >
+              <Ionicons name="document-text-outline" size={18} color="#4F46E5" />
+              <Text style={styles.summaryButtonText}>{t('appointments.details.viewSummary')}</Text>
+            </TouchableOpacity>
+          </>
         )}
 
-        {!canJoin && !canLeaveReview && !canAcceptDecline && isPast && !isTherapist && (
+        {!canJoin && !canLeaveReview && !canAcceptDecline && isPast && !isTherapist && appointment.status !== 'COMPLETED' && (
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push(`/book/${appointment.therapist?.id}`)}
           >
             <Ionicons name="refresh" size={20} color="#FFFFFF" />
-            <Text style={styles.primaryButtonText}>{t('appointments.bookAgain')}</Text>
+            <Text style={styles.primaryButtonText}>{t('appointments.details.bookAgain')}</Text>
           </TouchableOpacity>
         )}
 
@@ -472,9 +484,9 @@ export default function AppointmentDetailsScreen() {
             {canReschedule && (
               <TouchableOpacity
                 style={styles.secondaryButton}
-                onPress={() => Alert.alert(t('common.comingSoon'), t('appointments.rescheduleComingSoon'))}
+                onPress={() => Alert.alert(t('common.comingSoon'), t('appointments.details.rescheduleComingSoon'))}
               >
-                <Text style={styles.secondaryButtonText}>{t('appointments.reschedule')}</Text>
+                <Text style={styles.secondaryButtonText}>{t('appointments.details.reschedule')}</Text>
               </TouchableOpacity>
             )}
             {canCancel && (
@@ -830,5 +842,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#DC2626',
+  },
+  summaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    backgroundColor: '#EEF2FF',
+    gap: 8,
+  },
+  summaryButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#4F46E5',
   },
 });

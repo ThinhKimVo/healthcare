@@ -1,9 +1,66 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import Stripe from 'stripe';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  private stripe: Stripe;
+
+  constructor(private prisma: PrismaService) {
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+      apiVersion: '2026-02-25.clover',
+    });
+  }
+
+  async createSetupIntent(userId: string): Promise<{ clientSecret: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const setupIntent = await this.stripe.setupIntents.create({
+      payment_method_types: ['card'],
+      metadata: { userId },
+    });
+
+    return { clientSecret: setupIntent.client_secret! };
+  }
+
+  async verifyCard(userId: string, paymentMethodId: string): Promise<{ verified: boolean }> {
+    const paymentMethod = await this.prisma.paymentMethod.findFirst({
+      where: { id: paymentMethodId, userId },
+    });
+    if (!paymentMethod) throw new NotFoundException('Payment method not found');
+
+    try {
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount: 1, // $0.01
+        currency: 'usd',
+        payment_method: paymentMethod.stripePaymentMethodId,
+        confirm: true,
+        capture_method: 'manual',
+        automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+      });
+
+      if (paymentIntent.status === 'requires_capture') {
+        await this.stripe.paymentIntents.cancel(paymentIntent.id);
+      }
+
+      await this.prisma.paymentMethod.update({
+        where: { id: paymentMethodId },
+        data: { isVerified: true },
+      });
+
+      return { verified: true };
+    } catch {
+      await this.prisma.paymentMethod.update({
+        where: { id: paymentMethodId },
+        data: { isVerified: false },
+      });
+      return { verified: false };
+    }
+  }
 
   async getPaymentMethods(userId: string) {
     return this.prisma.paymentMethod.findMany({

@@ -57,6 +57,18 @@ export class PaymentsController {
     return this.paymentsService.deletePaymentMethod(req.user.id, id);
   }
 
+  @Post('setup-intent')
+  @ApiOperation({ summary: 'Create a Stripe SetupIntent for adding a card' })
+  async createSetupIntent(@Request() req: any) {
+    return this.paymentsService.createSetupIntent(req.user.id);
+  }
+
+  @Post('methods/:id/verify')
+  @ApiOperation({ summary: 'Verify card with $0.01 authorization charge' })
+  async verifyCard(@Request() req: any, @Param('id') id: string) {
+    return this.paymentsService.verifyCard(req.user.id, id);
+  }
+
   @Get('history')
   @ApiOperation({ summary: 'Get payment history' })
   async getPaymentHistory(

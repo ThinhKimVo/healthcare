@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TherapistsModule } from './therapists/therapists.module';
@@ -9,6 +10,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { AgoraModule } from './agora/agora.module';
+import { RemindersModule } from './reminders/reminders.module';
 
 @Module({
   imports: [
@@ -16,6 +18,7 @@ import { AgoraModule } from './agora/agora.module';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     FirebaseModule,
     AuthModule,
@@ -25,6 +28,7 @@ import { AgoraModule } from './agora/agora.module';
     PaymentsModule,
     NotificationsModule,
     AgoraModule,
+    RemindersModule,
   ],
 })
 export class AppModule {}

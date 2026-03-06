@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
+  Animated,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,11 +26,10 @@ const RATING_LABELS = [
 
 const QUICK_FEEDBACK = [
   { id: 'professional', labelKey: 'appointments.review.feedback.professional' },
-  { id: 'empathetic', labelKey: 'appointments.review.feedback.empathetic' },
   { id: 'helpful', labelKey: 'appointments.review.feedback.helpful' },
   { id: 'goodListener', labelKey: 'appointments.review.feedback.goodListener' },
-  { id: 'knowledgeable', labelKey: 'appointments.review.feedback.knowledgeable' },
-  { id: 'punctual', labelKey: 'appointments.review.feedback.punctual' },
+  { id: 'patient', labelKey: 'appointments.review.feedback.patient' },
+  { id: 'insightful', labelKey: 'appointments.review.feedback.insightful' },
 ];
 
 export default function ReviewAppointmentScreen() {
@@ -42,6 +41,8 @@ export default function ReviewAppointmentScreen() {
   const [selectedFeedback, setSelectedFeedback] = useState<string[]>([]);
   const [comment, setComment] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const successIconScale = useRef(new Animated.Value(0)).current;
 
   const { data: appointment, isLoading } = useAppointment(id!);
   const addReview = useAddReview();
@@ -87,20 +88,50 @@ export default function ReviewAppointmentScreen() {
         },
       });
 
-      Alert.alert(
-        t('appointments.review.success'),
-        t('appointments.review.successMessage'),
-        [
-          {
-            text: t('common.ok'),
-            onPress: () => router.replace('/(tabs)/appointments'),
-          },
-        ]
-      );
+      setIsSuccess(true);
+      Animated.spring(successIconScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 5,
+        tension: 60,
+      }).start();
     } catch (error: any) {
-      Alert.alert(t('common.error'), error?.message || t('errors.general'));
+      // Show inline error - fall back to a simple state
+      console.error('Review submission failed:', error?.message);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.successContainer}>
+          <Animated.View
+            style={[styles.successIconWrapper, { transform: [{ scale: successIconScale }] }]}
+          >
+            <Ionicons name="heart" size={56} color="#4F46E5" />
+          </Animated.View>
+          <Text style={styles.successTitle}>{t('appointments.review.success')}</Text>
+          <Text style={styles.successMessage}>{t('appointments.review.thankYouDescription')}</Text>
+          <View style={styles.successStars}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Ionicons
+                key={star}
+                name={star <= rating ? 'star' : 'star-outline'}
+                size={28}
+                color="#F59E0B"
+              />
+            ))}
+          </View>
+          <TouchableOpacity
+            style={styles.doneButton}
+            onPress={() => router.replace('/(tabs)/appointments')}
+          >
+            <Text style={styles.doneButtonText}>{t('common.done')}</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -230,7 +261,11 @@ export default function ReviewAppointmentScreen() {
             multiline
             numberOfLines={4}
             textAlignVertical="top"
+            maxLength={1000}
           />
+          {comment.length > 800 && (
+            <Text style={styles.charCount}>{comment.length}/1000</Text>
+          )}
         </Card>
 
         {/* Anonymous Toggle */}
@@ -521,6 +556,56 @@ const styles = StyleSheet.create({
     backgroundColor: '#A5B4FC',
   },
   submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  charCount: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'right',
+    marginTop: 4,
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  successIconWrapper: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  successStars: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 40,
+  },
+  doneButton: {
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
+  },
+  doneButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

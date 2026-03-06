@@ -312,7 +312,14 @@
       "cancellationReason": "Lý Do Hủy",
       "joinSession": "Tham Gia Buổi Hẹn",
       "reschedule": "Đổi Lịch",
-      "cancelAppointment": "Hủy Lịch Hẹn"
+      "cancelAppointment": "Hủy Lịch Hẹn",
+      "scheduledCall": "Gọi Video",
+      "instantCall": "Gọi Ngay",
+      "rescheduleComingSoon": "Tính năng đổi lịch sẽ sớm ra mắt.",
+      "viewSummary": "Xem Tóm Tắt Buổi Hẹn",
+      "leaveFeedback": "Để Lại Đánh Giá",
+      "bookAgain": "Đặt Lại",
+      "join": "Tham Gia Buổi Hẹn"
     },
     "cancel": {
       "title": "Hủy Lịch Hẹn",
@@ -366,11 +373,10 @@
       "selectAll": "Chọn tất cả các mục phù hợp",
       "feedback": {
         "professional": "Chuyên Nghiệp",
-        "empathetic": "Đồng Cảm",
         "helpful": "Hữu Ích",
         "goodListener": "Biết Lắng Nghe",
-        "knowledgeable": "Hiểu Biết",
-        "punctual": "Đúng Giờ"
+        "patient": "Kiên Nhẫn",
+        "insightful": "Sâu Sắc"
       },
       "additionalComments": "Nhận Xét Thêm",
       "optional": "Tùy Chọn",
@@ -381,7 +387,23 @@
       "submit": "Gửi Đánh Giá",
       "pleaseSelectRating": "Vui lòng chọn đánh giá",
       "success": "Cảm Ơn Bạn!",
-      "successMessage": "Đánh giá của bạn giúp các bệnh nhân khác tìm được chuyên gia phù hợp."
+      "successMessage": "Đánh giá của bạn đã được gửi thành công.",
+      "thankYouDescription": "Đánh giá của bạn giúp các bệnh nhân khác tìm được chuyên gia phù hợp và nâng cao chất lượng chăm sóc."
+    },
+    "summary": {
+      "title": "Tóm Tắt Buổi Hẹn",
+      "therapist": "Chuyên Gia",
+      "date": "Ngày",
+      "time": "Giờ",
+      "duration": "Thời Lượng",
+      "amountPaid": "Số Tiền Đã Trả",
+      "minutesFormat": "{{duration}} phút",
+      "share": "Chia Sẻ Tóm Tắt",
+      "bookNextSession": "Đặt Buổi Tiếp Theo",
+      "downloadReceipt": "Tải Biên Lai",
+      "nextAppointment": "Buổi Hẹn Tiếp Theo",
+      "sessionNotes": "Ghi Chú Buổi Hẹn",
+      "noNotes": "Không có ghi chú buổi hẹn"
     },
     "chat": "Nhắn tin",
     "empty": {
@@ -389,6 +411,64 @@
       "past": "Không có lịch hẹn đã qua",
       "cancelled": "Không có lịch hẹn đã hủy",
       "bookFirst": "Đặt buổi hẹn đầu tiên với chuyên gia"
+    }
+  },
+  "payment": {
+    "methods": {
+      "title": "Phương Thức Thanh Toán",
+      "savedCards": "Thẻ Đã Lưu",
+      "addMethod": "Thêm Phương Thức Thanh Toán",
+      "noMethods": "Chưa có phương thức thanh toán",
+      "noMethodsSubtitle": "Thêm thẻ để thanh toán cho các buổi của bạn",
+      "securedByStripe": "Bảo mật bởi Stripe",
+      "default": "Mặc định",
+      "verified": "Đã xác minh",
+      "unverified": "Chưa xác minh",
+      "setDefault": "Đặt làm mặc định",
+      "verify": "Xác Minh Thẻ",
+      "delete": "Xóa Thẻ",
+      "deleteConfirmTitle": "Xóa Thẻ",
+      "deleteConfirmMessage": "Bạn có chắc muốn xóa thẻ này? Hành động này không thể hoàn tác.",
+      "verifyTitle": "Xác Minh Thẻ",
+      "verifyMessage": "Chúng tôi sẽ tính $0.01 để xác minh thẻ của bạn và hoàn tiền ngay lập tức.",
+      "verifySuccess": "Thẻ của bạn đã được xác minh thành công.",
+      "verifyFailed": "Xác minh thẻ thất bại. Vui lòng kiểm tra thông tin thẻ.",
+      "addSuccess": "Thêm thẻ thành công!",
+      "expires": "Hết hạn"
+    },
+    "addMethod": {
+      "title": "Thêm Phương Thức Thanh Toán",
+      "cardTab": "Thẻ",
+      "walletTab": "Ví Điện Tử",
+      "cardDetails": "Thông Tin Thẻ",
+      "acceptedCards": "Chúng tôi chấp nhận Visa, Mastercard và Amex",
+      "billingAddress": "Địa Chỉ Thanh Toán (Tùy chọn)",
+      "fullName": "Họ và tên",
+      "streetAddress": "Địa chỉ",
+      "city": "Thành phố",
+      "zip": "Mã bưu chính",
+      "saveConsent": "Lưu thẻ này cho các thanh toán sau. Thông tin thẻ được mã hóa và lưu trữ an toàn.",
+      "verifyNotice": "Sẽ có khoản phí $0.01 để xác minh thẻ và được hoàn ngay lập tức.",
+      "addCard": "Thêm Thẻ",
+      "applePay": "Apple Pay",
+      "googlePay": "Google Pay",
+      "walletSubtitle": "Kết nối ví điện tử ưa thích để thanh toán nhanh hơn.",
+      "secureFooter": "Thanh toán bảo mật bởi Stripe · Tuân thủ PCI DSS",
+      "incompleteCard": "Vui lòng nhập đầy đủ thông tin thẻ.",
+      "consentRequired": "Vui lòng đồng ý lưu thẻ để tiếp tục."
+    },
+    "history": {
+      "title": "Lịch Sử Thanh Toán",
+      "totalTransactions": "Tổng Giao Dịch",
+      "totalPaid": "Tổng Đã Thanh Toán",
+      "noPayments": "Chưa có thanh toán",
+      "noPaymentsSubtitle": "Lịch sử thanh toán sẽ xuất hiện ở đây sau buổi đầu tiên của bạn.",
+      "status": {
+        "pending": "Đang xử lý",
+        "success": "Đã thanh toán",
+        "failed": "Thất bại",
+        "refunded": "Đã hoàn tiền"
+      }
     }
   },
   "profile": {
