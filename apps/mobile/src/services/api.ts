@@ -1,12 +1,11 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { isDevice } from 'expo-device';
 
 const getApiUrl = () => {
-  if (Constants.expoConfig?.extra?.apiUrl) {
-    return Constants.expoConfig.extra.apiUrl;
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
   }
   // Android emulator uses 10.0.2.2 to access host machine's localhost
   const host = Platform.OS === 'android' && !isDevice ? '10.0.2.2' : 'localhost';

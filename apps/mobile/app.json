@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Hopefull",
+    "name": "STS Healthcare",
     "slug": "hopefull",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,8 +15,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hopefull.app",
-      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.hopefull2.app",
+
       "infoPlist": {
         "NSCameraUsageDescription": "We need camera access for video calls and profile photos",
         "NSMicrophoneUsageDescription": "We need microphone access for video and audio calls",
@@ -31,6 +31,7 @@
         "backgroundColor": "#4F46E5"
       },
       "package": "com.hopefull.app",
+      "usesCleartextTraffic": true,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
@@ -64,13 +65,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Hopefull to access your camera for video calls"
+          "cameraPermission": "Allow STS Healthcare to access your camera for video calls"
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Hopefull to access your photos to upload a profile picture"
+          "photosPermission": "Allow STS Healthcare to access your photos to upload a profile picture"
         }
       ],
       "@react-native-google-signin/google-signin",

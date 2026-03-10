@@ -30,13 +30,13 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>hopefull</string>
-				<string>com.hopefull.app</string>
+				<string>com.hopefull2.app</string>
 			</array>
 		</dict>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.208742036545-1abtltlb6llon3c4vap3fagpcfmcnvlq</string>
+				<string>com.googleusercontent.apps.208742036545-is17lhgg0fipmtonfomt59o7gj2bk9n3</string>
 			</array>
 		</dict>
 	</array>

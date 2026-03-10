@@ -4,32 +4,26 @@ require File.join(File.dirname(`node --print "require.resolve('react-native/pack
 require 'json'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 
-ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
+ENV['RCT_NEW_ARCH_ENABLED'] = '0' if podfile_properties['newArchEnabled'] == 'false'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
 
 platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 install! 'cocoapods',
   :deterministic_uuids => false
 
-prepare_react_native_project!
-
-# Use static frameworks for Firebase
 $RNFirebaseAsStaticFramework = true
 
-# Let RNFirebase use its default Firebase SDK version (12.8.0 for v23.x)'
+prepare_react_native_project!
 
 target 'Hopefull' do
   use_expo_modules!
-
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
   else
     config_command = [
-      'node',
-      '--no-warnings',
-      '--eval',
-      'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
+      'npx',
+      'expo-modules-autolinking',
       'react-native-config',
       '--json',
       '--platform',
@@ -57,38 +51,12 @@ target 'Hopefull' do
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
 
-    # This is necessary for Xcode 14, because it signs resource bundles by default
-    # when building for devices.
     installer.target_installation_results.pod_target_installation_results
       .each do |pod_name, target_installation_result|
       target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
         resource_bundle_target.build_configurations.each do |config|
           config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
         end
-      end
-    end
-
-    # Fix for gRPC/abseil C++ header issues with Xcode 16
-    # and Firebase Swift header issues
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        # Fix for gRPC pods - set correct C++ headers and disable problematic features
-        if ['gRPC-C++', 'gRPC-Core', 'BoringSSL-GRPC', 'abseil'].include?(target.name)
-          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++17'
-          config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
-          config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
-          config.build_settings['USE_HEADERMAP'] = 'NO'
-          config.build_settings['ALWAYS_SEARCH_USER_PATHS'] = 'NO'
-        end
-
-        # Allow non-modular includes for all pods to fix Swift header and module import issues
-        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-
-        # Disable Swift module interface verification to fix FirebaseAuth-Swift.h issues
-        config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['$(inherited)']
-        config.build_settings['OTHER_SWIFT_FLAGS'] << '-no-verify-emitted-module-interface' unless config.build_settings['OTHER_SWIFT_FLAGS'].include?('-no-verify-emitted-module-interface')
-
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'GRPC_ARES=0']
       end
     end
   end

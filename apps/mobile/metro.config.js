@@ -33,7 +33,6 @@ config.resolver.unstable_conditionNames = [
   'react-native',
   'browser',
   'require',
-  'import',
   'default',
 ];
 
@@ -43,10 +42,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === '@react-native-firebase/storage') {
     return { type: 'empty' };
   }
-  // Force axios to use browser build instead of Node build
-  if (moduleName === 'axios') {
-    return context.resolveRequest(context, 'axios/dist/browser/axios.cjs', platform);
-  }
+  // axios resolves via react-native condition in unstable_conditionNames above
   if (originalResolveRequest) {
     return originalResolveRequest(context, moduleName, platform);
   }
