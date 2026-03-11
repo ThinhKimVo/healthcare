@@ -109,6 +109,13 @@ export default function BookAppointmentScreen() {
   const handleFinalConfirm = async () => {
     if (!selectedSlot || !selectedPaymentMethod || !therapist) return;
 
+    // Find the Stripe payment method ID from our saved methods
+    const selectedMethod = paymentMethods?.find((m) => m.id === selectedPaymentMethod);
+    if (!selectedMethod) {
+      setBookingError(t('booking.paymentMethodNotFound'));
+      return;
+    }
+
     try {
       setBookingError(null);
 
@@ -118,9 +125,12 @@ export default function BookAppointmentScreen() {
         paymentMethodId: selectedPaymentMethod,
       });
 
-      // 2. Confirm payment with Stripe
+      // 2. Confirm payment with Stripe using saved payment method
       const { error: stripeError, paymentIntent } = await confirmPayment(clientSecret, {
         paymentMethodType: 'Card',
+        paymentMethodData: {
+          paymentMethodId: selectedMethod.stripePaymentMethodId,
+        },
       });
 
       if (stripeError) {

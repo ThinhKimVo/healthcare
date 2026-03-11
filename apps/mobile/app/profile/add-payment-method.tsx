@@ -87,7 +87,7 @@ export default function AddPaymentMethodScreen() {
       }
 
       // 3. Save payment method to our backend
-      await paymentsService.addPaymentMethod({
+      const savedMethod = await paymentsService.addPaymentMethod({
         stripePaymentMethodId: setupIntent.paymentMethodId,
         type: 'card',
         brand: cardDetails?.brand,
@@ -96,7 +96,15 @@ export default function AddPaymentMethodScreen() {
         expiryYear: cardDetails?.expiryYear,
       });
 
-      // 4. Invalidate and navigate back
+      // 4. Verify the card via SetupIntent (no charge)
+      try {
+        await paymentsService.verifyCard(savedMethod.id);
+      } catch (verifyErr) {
+        // Card added but verification failed - still usable
+        console.warn('Card verification failed:', verifyErr);
+      }
+
+      // 5. Invalidate and navigate back
       queryClient.invalidateQueries({ queryKey: ['payment-methods'] });
       Alert.alert('Success', 'Card added successfully!', [
         { text: 'OK', onPress: () => router.back() },
@@ -274,7 +282,7 @@ export default function AddPaymentMethodScreen() {
             <View style={styles.verifyNotice}>
               <Ionicons name="information-circle-outline" size={16} color="#6B7280" />
               <Text style={styles.verifyNoticeText}>
-                A $0.01 authorization will be placed to verify your card and immediately refunded.
+                Your card will be verified without any charge. No amount will be held or deducted.
               </Text>
             </View>
 
