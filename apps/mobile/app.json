@@ -16,14 +16,14 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.hopefull2.app",
-
       "infoPlist": {
         "NSCameraUsageDescription": "We need camera access for video calls and profile photos",
         "NSMicrophoneUsageDescription": "We need microphone access for video and audio calls",
         "NSPhotoLibraryUsageDescription": "We need photo library access to upload profile photos",
         "NSFaceIDUsageDescription": "We use Face ID for secure login"
       },
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "appleTeamId": "C3J3JQQSL5"
     },
     "android": {
       "adaptiveIcon": {

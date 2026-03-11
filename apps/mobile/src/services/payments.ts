@@ -46,4 +46,13 @@ export const paymentsService = {
     const { data } = await api.post(`/payments/methods/${id}/verify`);
     return data;
   },
+
+  async createPaymentIntent(params: {
+    amount: number;
+    paymentMethodId: string;
+    appointmentId?: string;
+  }): Promise<{ clientSecret: string; paymentIntentId: string }> {
+    const { data } = await api.post('/payments/payment-intent', params);
+    return data;
+  },
 };

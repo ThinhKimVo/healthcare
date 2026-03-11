@@ -1,53 +1,17 @@
-import { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../src/store/auth';
-import { CommonActions, useNavigation } from '@react-navigation/native';
 import { useIncomingCalls } from '../../src/hooks/useIncomingCalls';
-
-// Module-level flag to prevent redirect loops
-let isRedirecting = false;
 
 export default function TherapistTabsLayout() {
   const { t } = useTranslation();
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const isTherapist = user?.role === 'THERAPIST';
-  const navigation = useNavigation();
 
   // Listen for incoming calls (only for therapists)
   useIncomingCalls();
 
-  // Redirect to welcome if not authenticated or not a therapist
-  useEffect(() => {
-    if (!isLoading && !isRedirecting) {
-      if (!isAuthenticated) {
-        console.log('TherapistTabsLayout: Not authenticated, resetting to welcome');
-        isRedirecting = true;
-        const rootNav = navigation.getParent() || navigation;
-        rootNav.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: 'index' }],
-          })
-        );
-        setTimeout(() => { isRedirecting = false; }, 1000);
-      } else if (!isTherapist) {
-        console.log('TherapistTabsLayout: Not a therapist, redirecting to user tabs');
-        isRedirecting = true;
-        const rootNav = navigation.getParent() || navigation;
-        rootNav.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: '(tabs)' }],
-          })
-        );
-        setTimeout(() => { isRedirecting = false; }, 1000);
-      }
-    }
-  }, [isLoading, isAuthenticated, isTherapist, navigation]);
-
-  // Show nothing while redirecting
   if (!isLoading && (!isAuthenticated || !isTherapist)) {
     return null;
   }

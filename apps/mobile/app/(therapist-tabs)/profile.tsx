@@ -204,6 +204,7 @@ export default function TherapistProfileScreen() {
           onPress: async () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             await logout();
+            router.replace('/auth/login');
           },
         },
       ]

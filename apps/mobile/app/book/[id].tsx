@@ -14,9 +14,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useStripe } from '@stripe/stripe-react-native';
 import { useTherapist, useTherapistAvailability } from '@/hooks/useTherapists';
 import { usePaymentMethods } from '@/hooks/usePayments';
 import { useCreateAppointment } from '@/hooks/useAppointments';
+import { paymentsService } from '@/services/payments';
 import { formatCurrencyFromCents, formatDate } from '@/utils/formatting';
 import type { TimeSlot, PaymentMethod } from '@/types';
 
@@ -40,6 +42,8 @@ export default function BookAppointmentScreen() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+
+  const { confirmPayment } = useStripe();
 
   // Queries
   const { data: therapist, isLoading: therapistLoading } = useTherapist(id!);
@@ -108,7 +112,28 @@ export default function BookAppointmentScreen() {
     try {
       setBookingError(null);
 
-      // Combine date and time
+      // 1. Create PaymentIntent on backend
+      const { clientSecret } = await paymentsService.createPaymentIntent({
+        amount: totalPrice,
+        paymentMethodId: selectedPaymentMethod,
+      });
+
+      // 2. Confirm payment with Stripe
+      const { error: stripeError, paymentIntent } = await confirmPayment(clientSecret, {
+        paymentMethodType: 'Card',
+      });
+
+      if (stripeError) {
+        setBookingError(stripeError.message);
+        return;
+      }
+
+      if (paymentIntent?.status !== 'Succeeded') {
+        setBookingError(t('booking.paymentFailed'));
+        return;
+      }
+
+      // 3. Create appointment after successful payment
       const scheduledAt = new Date(selectedDate);
       const [hours, minutes] = selectedSlot.startTime.split(':').map(Number);
       scheduledAt.setHours(hours, minutes, 0, 0);
@@ -121,6 +146,7 @@ export default function BookAppointmentScreen() {
         amount: totalPrice,
         bookingNotes: bookingNotes.trim() || undefined,
         paymentMethodId: selectedPaymentMethod,
+        stripePaymentIntentId: paymentIntent.id,
       });
 
       setBookingSuccess(true);
@@ -328,7 +354,7 @@ export default function BookAppointmentScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('booking.paymentMethod')}</Text>
-            <TouchableOpacity onPress={() => Alert.alert(t('booking.addPaymentMethod'), 'Coming soon')}>
+            <TouchableOpacity onPress={() => router.push('/profile/add-payment-method')}>
               <Text style={styles.addNewText}>{t('booking.addNew')}</Text>
             </TouchableOpacity>
           </View>

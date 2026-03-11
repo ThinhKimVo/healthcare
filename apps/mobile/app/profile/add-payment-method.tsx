@@ -17,8 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useStripe,
   CardField,
-  useApplePay,
-  useGooglePay,
+  usePlatformPay,
+  PlatformPay,
 } from '@stripe/stripe-react-native';
 import type { CardFieldInput } from '@stripe/stripe-react-native';
 import { paymentsService } from '@/services/payments';
@@ -27,9 +27,8 @@ import { useQueryClient } from '@tanstack/react-query';
 type TabType = 'card' | 'wallet';
 
 export default function AddPaymentMethodScreen() {
-  const { createPaymentMethod, confirmSetupIntent } = useStripe();
-  const { isApplePaySupported, presentApplePay, confirmApplePayPayment } = useApplePay();
-  const { isGooglePaySupported, initGooglePay, presentGooglePay } = useGooglePay();
+  const { confirmSetupIntent } = useStripe();
+  const { isPlatformPaySupported, confirmPlatformPaySetupIntent } = usePlatformPay();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<TabType>('card');
@@ -109,68 +108,47 @@ export default function AddPaymentMethodScreen() {
     }
   };
 
-  const handleApplePay = async () => {
-    if (!isApplePaySupported) {
-      Alert.alert('Apple Pay', 'Apple Pay is not supported on this device.');
+  const handlePlatformPay = async () => {
+    const supported = await isPlatformPaySupported();
+    if (!supported) {
+      Alert.alert(
+        Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay',
+        `${Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay'} is not supported on this device.`
+      );
       return;
     }
     setIsLoading(true);
     try {
       const { clientSecret } = await paymentsService.createSetupIntent();
-      const { error } = await presentApplePay({
-        cartItems: [{ label: 'Save Payment Method', amount: '0.00', paymentType: 'Immediate' }],
-        country: 'US',
-        currency: 'USD',
+      const { error } = await confirmPlatformPaySetupIntent(clientSecret, {
+        applePay: {
+          merchantCountryCode: 'US',
+          currencyCode: 'USD',
+          cartItems: [
+            {
+              label: 'Save Payment Method',
+              amount: '0.00',
+              paymentType: PlatformPay.PaymentType.Immediate,
+            },
+          ],
+        },
+        googlePay: {
+          testEnv: __DEV__,
+          merchantName: 'STS Healthcare',
+          merchantCountryCode: 'US',
+          currencyCode: 'USD',
+        },
       });
       if (error) {
-        Alert.alert('Apple Pay', error.message);
-        return;
-      }
-      const { error: confirmError } = await confirmApplePayPayment(clientSecret);
-      if (confirmError) {
-        Alert.alert('Apple Pay', confirmError.message);
+        Alert.alert('Error', error.message);
         return;
       }
       queryClient.invalidateQueries({ queryKey: ['payment-methods'] });
-      Alert.alert('Success', 'Apple Pay added successfully!', [
+      Alert.alert('Success', `${Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay'} added successfully!`, [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err: any) {
-      Alert.alert('Error', 'Failed to add Apple Pay. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGooglePay = async () => {
-    setIsLoading(true);
-    try {
-      const supported = await isGooglePaySupported({ testEnv: __DEV__ });
-      if (!supported) {
-        Alert.alert('Google Pay', 'Google Pay is not available on this device.');
-        return;
-      }
-      await initGooglePay({
-        testEnv: __DEV__,
-        merchantName: 'Hopefull',
-        countryCode: 'US',
-      });
-      const { clientSecret } = await paymentsService.createSetupIntent();
-      const { error } = await presentGooglePay({
-        clientSecret,
-        forSetupIntent: true,
-        currencyCode: 'USD',
-      });
-      if (error) {
-        Alert.alert('Google Pay', error.message);
-        return;
-      }
-      queryClient.invalidateQueries({ queryKey: ['payment-methods'] });
-      Alert.alert('Success', 'Google Pay added successfully!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
-    } catch (err: any) {
-      Alert.alert('Error', 'Failed to add Google Pay. Please try again.');
+      Alert.alert('Error', 'Failed to add payment method. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -327,7 +305,7 @@ export default function AddPaymentMethodScreen() {
             {Platform.OS === 'ios' && (
               <TouchableOpacity
                 style={[styles.walletBtn, styles.walletBtnApple]}
-                onPress={handleApplePay}
+                onPress={handlePlatformPay}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -344,7 +322,7 @@ export default function AddPaymentMethodScreen() {
             {Platform.OS === 'android' && (
               <TouchableOpacity
                 style={[styles.walletBtn, styles.walletBtnGoogle]}
-                onPress={handleGooglePay}
+                onPress={handlePlatformPay}
                 disabled={isLoading}
               >
                 {isLoading ? (

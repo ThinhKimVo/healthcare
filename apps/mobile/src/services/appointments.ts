@@ -9,6 +9,7 @@ export interface CreateAppointmentData {
   amount: number;
   bookingNotes?: string;
   paymentMethodId?: string;
+  stripePaymentIntentId?: string;
 }
 
 export interface CreateReviewData {

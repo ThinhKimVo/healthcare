@@ -169,8 +169,8 @@ importers:
         specifier: ^7.1.28
         version: 7.1.28(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       '@stripe/stripe-react-native':
-        specifier: 0.45.0
-        version: 0.45.0(expo@53.0.27)(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+        specifier: 0.59.2
+        version: 0.59.2(expo@53.0.27)(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       '@tanstack/react-query':
         specifier: ^5.90.21
         version: 5.90.21(react@19.0.0)
@@ -1757,14 +1757,17 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@stripe/stripe-react-native@0.45.0':
-    resolution: {integrity: sha512-7ebzpzkbTrlSfwHJkxv2ixP+YhrF7rLncIr0Sxk6iOeVarB1rOoURWlLRf+Yy5G5OJYjgZDVSVpITcOddtgAVw==}
+  '@stripe/stripe-react-native@0.59.2':
+    resolution: {integrity: sha512-pZcqmjKQrf/NEMeovSFtYbA1FahetA4+Fgr1xtEo9qGEOlkWRvkdyUyEjioUZ+IkXI/J0ErviyteEggiJB0wkQ==}
     peerDependencies:
       expo: '>=46.0.9'
       react: '*'
       react-native: '*'
+      react-native-webview: '*'
     peerDependenciesMeta:
       expo:
+        optional: true
+      react-native-webview:
         optional: true
 
   '@tanstack/query-core@5.90.20':
@@ -8070,12 +8073,13 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@stripe/stripe-react-native@0.45.0(expo@53.0.27)(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)':
+  '@stripe/stripe-react-native@0.59.2(expo@53.0.27)(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)':
     dependencies:
       react: 19.0.0
       react-native: 0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0)
     optionalDependencies:
       expo: 53.0.27(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0)))(react-native-webview@13.13.5(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+      react-native-webview: 13.13.5(react-native@0.79.6(@babel/core@7.29.0)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
 
   '@tanstack/query-core@5.90.20': {}
 

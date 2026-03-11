@@ -168,10 +168,8 @@ export default function ProfileScreen() {
           text: t('profile.logout.confirm'),
           style: 'destructive',
           onPress: async () => {
-            console.log('Logout: starting');
             await logout();
-            console.log('Logout: complete - RootLayout will redirect');
-            // RootLayout handles redirect via <Redirect> component
+            router.replace('/auth/login');
           },
         },
       ]

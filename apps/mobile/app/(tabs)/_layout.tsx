@@ -1,14 +1,9 @@
-import { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../src/store/auth';
-import { CommonActions, useNavigation } from '@react-navigation/native';
 import { useUpcomingSessionBadge } from '../../src/hooks/useAppointments';
-
-// Module-level flag to prevent redirect loops
-let isRedirectingToWelcome = false;
 
 function AppointmentsBadgeIcon({ color, size }: { color: string; size: number }) {
   const { data: badgeCount = 0 } = useUpcomingSessionBadge();
@@ -28,31 +23,7 @@ export default function TabsLayout() {
   const { t } = useTranslation();
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const isTherapist = user?.role === 'THERAPIST';
-  const navigation = useNavigation();
 
-  // Redirect to welcome if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated && !isRedirectingToWelcome) {
-      console.log('TabsLayout: Not authenticated, resetting to welcome');
-      isRedirectingToWelcome = true;
-
-      // Get root navigator and reset it
-      const rootNav = navigation.getParent() || navigation;
-      rootNav.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'index' }],
-        })
-      );
-
-      // Reset flag after navigation settles
-      setTimeout(() => {
-        isRedirectingToWelcome = false;
-      }, 1000);
-    }
-  }, [isLoading, isAuthenticated, navigation]);
-
-  // Show nothing while redirecting
   if (!isLoading && !isAuthenticated) {
     return null;
   }

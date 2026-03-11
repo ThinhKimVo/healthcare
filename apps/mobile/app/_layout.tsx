@@ -30,7 +30,6 @@ function useProtectedRoute() {
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
-  const hasRedirected = useRef(false);
   const pushNotificationsInitialized = useRef(false);
 
   // Initialize push notifications when authenticated
@@ -38,7 +37,6 @@ function useProtectedRoute() {
     if (isAuthenticated && !pushNotificationsInitialized.current) {
       pushNotificationsInitialized.current = true;
 
-      // Set up callback to refresh notification count when push is received
       pushNotificationService.setOnNotificationReceived(() => {
         queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
         queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -49,7 +47,6 @@ function useProtectedRoute() {
       });
     }
 
-    // Cleanup when logging out
     if (!isAuthenticated && pushNotificationsInitialized.current) {
       pushNotificationsInitialized.current = false;
       pushNotificationService.removeListeners();
@@ -80,40 +77,14 @@ function useProtectedRoute() {
       return;
     }
 
-    // Not authenticated and trying to access protected routes (tabs)
-    // Note: Tabs layout handles its own redirect via <Redirect> component
-    if (!isAuthenticated && (inTabsGroup || inTherapistTabsGroup)) {
-      if (__DEV__) console.log('Not authenticated in tabs - tabs layout will redirect');
-      return;
-    }
-
     // Authenticated and on auth/welcome screens - go to appropriate tabs
     if (isAuthenticated && (inAuthGroup || isOnWelcome)) {
-      if (isTherapist) {
-        if (__DEV__) console.log('Redirect: welcome/auth -> therapist-tabs');
-        router.replace('/(therapist-tabs)');
-      } else {
-        if (__DEV__) console.log('Redirect: welcome/auth -> tabs');
-        router.replace('/(tabs)');
-      }
+      const target = isTherapist ? '/(therapist-tabs)' : '/(tabs)';
+      if (__DEV__) console.log('Redirect:', target);
+      // Defer to next tick so navigator tree is fully mounted on cold start
+      setTimeout(() => router.replace(target as any), 0);
       return;
     }
-
-    // Therapist in user tabs - redirect to therapist tabs
-    if (isAuthenticated && isTherapist && inTabsGroup) {
-      if (__DEV__) console.log('Redirect: therapist in user tabs -> therapist-tabs');
-      router.replace('/(therapist-tabs)');
-      return;
-    }
-
-    // User in therapist tabs - redirect to user tabs
-    if (isAuthenticated && !isTherapist && inTherapistTabsGroup) {
-      if (__DEV__) console.log('Redirect: user in therapist tabs -> tabs');
-      router.replace('/(tabs)');
-      return;
-    }
-
-    hasRedirected.current = false;
   }, [user, isAuthenticated, segments, isLoading, navigationState?.key, hasSeenOnboarding]);
 }
 
