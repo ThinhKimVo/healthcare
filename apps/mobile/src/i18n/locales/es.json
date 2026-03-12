@@ -395,6 +395,12 @@
       "noNotes": "No se proporcionaron notas de sesión"
     },
     "chat": "Chat",
+    "join": "Unirse",
+    "instantCall": "Llamada Instantánea",
+    "startsIn": "Comienza en {{time}}",
+    "ratedWith": "Calificado {{rating}}/5",
+    "leaveFeedback": "Dejar Comentario",
+    "bookAgain": "Reservar de Nuevo",
     "empty": {
       "upcoming": "No hay citas próximas",
       "past": "No hay citas pasadas",

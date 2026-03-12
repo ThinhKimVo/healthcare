@@ -407,6 +407,12 @@
       "noNotes": "No session notes provided"
     },
     "chat": "Chat",
+    "join": "Join",
+    "instantCall": "Instant Call",
+    "startsIn": "Starts in {{time}}",
+    "ratedWith": "Rated {{rating}}/5",
+    "leaveFeedback": "Leave Feedback",
+    "bookAgain": "Book Again",
     "empty": {
       "upcoming": "No upcoming appointments",
       "past": "No past appointments",

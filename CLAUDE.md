@@ -68,8 +68,10 @@ The API follows NestJS module pattern:
 - `src/therapists/` - Therapist discovery, availability, reviews
 - `src/appointments/` - Booking, scheduling, cancellation
 - `src/payments/` - Payment methods, transactions, Stripe integration
+- `src/notifications/` - Push notifications via FCM, device token management, in-app notifications
+- `src/reminders/` - Cron-based appointment reminders (24H, 1H, 15MIN before session)
 - `src/prisma/` - Global Prisma service for database access
-- `src/firebase/` - Firebase Admin SDK for phone verification, Firestore for avatar storage
+- `src/firebase/` - Firebase Admin SDK for phone verification, FCM push notifications, Firestore for avatar storage
 
 Key patterns:
 - Global `PrismaModule` provides database access to all modules
@@ -118,16 +120,49 @@ Key patterns:
 | `/api/v1/therapists/:id/reviews` | GET | Get therapist reviews (paginated) |
 | `/api/v1/therapists/me/status` | PATCH | Update online/offline status (therapist only) |
 
+#### Notification Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/notifications` | GET | Get paginated notifications |
+| `/api/v1/notifications/unread-count` | GET | Get unread notification count |
+| `/api/v1/notifications/:id/read` | PATCH | Mark notification as read |
+| `/api/v1/notifications/mark-all-read` | POST | Mark all notifications as read |
+| `/api/v1/notifications/:id` | DELETE | Delete a notification |
+| `/api/v1/notifications/device-token` | POST | Register FCM device token |
+| `/api/v1/notifications/device-token` | DELETE | Remove FCM device token |
+| `/api/v1/notifications/chat-message` | POST | Send push notification for chat message (no DB record) |
+| `/api/v1/notifications/test/booking-confirmation` | POST | Send test booking notification |
+
+#### Appointment Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/appointments` | POST | Create a new appointment |
+| `/api/v1/appointments` | GET | Get user appointments (query: status=upcoming\|past) |
+| `/api/v1/appointments/therapist` | GET | Get therapist appointments |
+| `/api/v1/appointments/all` | GET | List all appointments (admin only) |
+| `/api/v1/appointments/:id` | GET | Get appointment by ID |
+| `/api/v1/appointments/:id/confirm` | PATCH | Confirm appointment (therapist) |
+| `/api/v1/appointments/:id/decline` | PATCH | Decline appointment (therapist) |
+| `/api/v1/appointments/:id/cancel` | PATCH | Cancel appointment (patient) |
+| `/api/v1/appointments/:id/therapist-cancel` | PATCH | Cancel appointment (therapist) |
+| `/api/v1/appointments/:id/complete` | PATCH | Complete appointment (therapist) |
+| `/api/v1/appointments/:id/review` | POST | Add review for appointment |
+| `/api/v1/appointments/:id/test-reminder` | POST | DEV: Send reminder notification immediately |
+
 ### Mobile Structure (Expo Router)
 
 File-based routing with Expo Router:
-- `app/_layout.tsx` - Root layout with providers
+- `app/_layout.tsx` - Root layout with providers, top-level push notification handlers
 - `app/index.tsx` - Welcome/landing screen
 - `app/onboarding.tsx` - Onboarding carousel
 - `app/auth/` - Login, register, OTP verification, forgot password, biometric setup flows
 - `app/(tabs)/` - Main app tabs (Home, Appointments, Therapists, Profile)
 - `app/profile/` - Profile editing, settings, security screens
 - `app/therapist/` - Therapist detail (with About/Availability/Reviews tabs) and booking screens
+- `app/chat/[appointmentId].tsx` - Chat screen with push notification suppression
+- `app/notifications/` - Notification list with tap-to-navigate
 - `app/instant-call/` - Instant call search and outgoing call screens
 - `app/incoming-call.tsx` - Incoming call screen for therapists
 - `app/session/` - Video call session screen
@@ -140,6 +175,8 @@ State management:
 - `src/services/biometric.ts` - Biometric authentication (Face ID, Touch ID, Fingerprint)
 - `src/services/image-picker.ts` - Camera/gallery image picker with crop/resize
 - `src/services/users.ts` - User profile and avatar management
+- `src/services/push-notifications.ts` - FCM token management, foreground notification display via notifee
+- `src/services/notifications.ts` - Notification API service (CRUD, device token registration)
 - `src/config/firebase.ts` - Firebase client SDK configuration
 - Tokens stored in `expo-secure-store`
 - Onboarding flag stored in `AsyncStorage` (SecureStore unreliable on Android)
@@ -242,6 +279,63 @@ Key files:
 - Real-time listeners for call status changes
 - Channel name format: `ch-{userId8chars}-{therapistId8chars}-{timestamp36}`
 
+#### Push Notifications
+
+Uses `@react-native-firebase/messaging` for FCM token management and `@notifee/react-native` for notification display. Replaced `expo-notifications`.
+
+**Architecture:**
+- **Token source**: `@react-native-firebase/messaging` provides FCM tokens on both platforms. On iOS, Firebase registers with APNs and returns a mapped FCM token.
+- **Foreground display**: `@notifee/react-native` displays local notifications when app is in foreground (Firebase does not show notifications in foreground by default).
+- **Background/killed**: FCM/APNs handles display automatically via system notification.
+- **Tap handling**: `notifee.onForegroundEvent`, `notifee.onBackgroundEvent`, and `messaging().onNotificationOpenedApp()` for navigation.
+
+**Top-level handlers** (registered in `app/_layout.tsx`, outside React components):
+- `messaging().setBackgroundMessageHandler()` — background message processing
+- `messaging().onMessage()` → calls `pushNotificationService.handleForegroundMessage()` — foreground display via notifee
+- `notifee.onForegroundEvent()` — notification tap while app is open
+- `notifee.onBackgroundEvent()` — notification tap from background/killed
+- `messaging().onNotificationOpenedApp()` — Firebase notification tap from background
+
+**Chat notification suppression**: When user is on a chat screen, `activeChatAppointmentId` is set. Foreground notifications with matching `appointmentId` and `screen: 'chat'` are suppressed.
+
+**API push notification format** (sent via Firebase Admin SDK `messaging.send()`):
+- Top-level `notification: { title, body }` for both platforms
+- `data` payload with `type`, `screen`, `appointmentId`, `badgeCount`
+- iOS: additional `apns.payload.aps` with badge, sound, thread-id, content-available
+- Android: `android.priority: 'high'`, sound, channelId, notificationCount
+
+**Notification types and navigation:**
+| Type | Screen | Navigation |
+|------|--------|------------|
+| `THERAPIST_MESSAGE` | `chat` | `/chat/{appointmentId}` |
+| `BOOKING_CONFIRMATION` | `appointment-details` | `/appointment/{appointmentId}` |
+| `APPOINTMENT_REMINDER` | `appointment-details` or `join-session` | `/appointment/{appointmentId}` or `/session/{appointmentId}` |
+| `PAYMENT_RECEIPT` | `payment-details` | `/(tabs)/appointments` |
+| `SYSTEM` | varies | `/notifications` |
+
+Key files:
+- `src/services/push-notifications.ts` - FCM token, notifee display, navigation
+- `src/services/notifications.ts` - API calls for notifications CRUD and device token
+- `src/hooks/useNotifications.ts` - React Query hooks for notification data
+- `app/_layout.tsx` - Top-level message and event handlers
+
+#### Appointment Reminders
+
+Cron-based reminders sent at 24H, 1H, and 15MIN before each confirmed appointment.
+
+**Flow:**
+1. When an appointment is confirmed, `RemindersService.createRemindersForAppointment()` creates `AppointmentReminder` records
+2. A `@Cron(EVERY_MINUTE)` job in `RemindersService.processReminders()` finds due reminders
+3. Sends push notifications to both patient and therapist
+4. Marks reminders as sent (`sentAt` timestamp)
+5. Skips cancelled/completed appointments
+
+**Test endpoint:** `POST /api/v1/appointments/:id/test-reminder?type=15MIN` — sends reminder immediately to the requesting user.
+
+Key files:
+- `src/reminders/reminders.service.ts` - Cron job, reminder creation, notification dispatch
+- `src/reminders/reminders.module.ts` - Module registration
+
 ### Admin Panel Structure
 
 React Router with protected routes:
@@ -259,8 +353,11 @@ PostgreSQL with Prisma ORM. Key models in `apps/api/prisma/schema.prisma`:
   - Verification: `emailVerified`, `phoneVerified`, `otpCode`, `otpExpiresAt`
 - **Therapist** - Extended profile linked to User, includes verification status
 - **Appointment** - Bookings with status workflow (PENDING → CONFIRMED → COMPLETED)
+- **AppointmentReminder** - Scheduled reminders (24H, 1H, 15MIN) with `scheduledFor` and `sentAt`
 - **Payment** - Stripe integration, tracks amounts in cents
 - **Review** - 1-5 star ratings with optional feedback
+- **Notification** - In-app notifications with type, read status, and JSON data
+- **DeviceToken** - FCM device tokens per user with platform (ios/android)
 
 All monetary values stored as integers (cents). Timestamps use `@default(now())` and `@updatedAt`.
 
@@ -334,6 +431,13 @@ EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
 4. Select your Cloud Firestore location
 5. Click "Done"
 
+### Enable Cloud Messaging (for Push Notifications)
+1. Go to Project Settings → Cloud Messaging
+2. **iOS**: Upload APNs authentication key (.p8 file) or APNs certificate
+   - Get the key from Apple Developer → Certificates, Identifiers & Profiles → Keys → Create Key with APNs
+   - Enter Key ID and Team ID in Firebase Console
+3. **Android**: FCM is enabled by default with `google-services.json`
+
 ### Mobile App Configuration (Android)
 1. Add Android app in Firebase Console (Project Settings → General → Your apps)
 2. Download `google-services.json` to `apps/mobile/android/app/`
@@ -341,12 +445,16 @@ EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
    ```bash
    cd apps/mobile/android && ./gradlew signingReport
    ```
+4. Notifee Maven repository is configured in `android/build.gradle` (resolved via Node)
+5. Firebase messaging manifest conflict is resolved with `tools:replace` in `AndroidManifest.xml`
 
 ### Mobile App Configuration (iOS)
 1. Add iOS app in Firebase Console
 2. Download `GoogleService-Info.plist` to `apps/mobile/ios/`
 3. Enable "Sign in with Apple" capability in Xcode
 4. Add URL scheme for Google Sign-In (reversed client ID)
+5. `aps-environment` entitlement is already configured (change to `production` for App Store)
+6. Firebase method swizzling is enabled (default) — automatically handles APNs token registration
 
 ## Key Mobile Dependencies
 
@@ -354,11 +462,19 @@ EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
 |---------|---------|
 | `@react-native-firebase/app` | Firebase core SDK |
 | `@react-native-firebase/auth` | Firebase Authentication |
+| `@react-native-firebase/messaging` | FCM push notifications, APNs token management |
+| `@react-native-firebase/firestore` | Firestore for chat and call signaling |
+| `@notifee/react-native` | Local notification display, Android channels, badge count |
 | `@react-native-google-signin/google-signin` | Google Sign-In native SDK |
 | `expo-apple-authentication` | Apple Sign-In (iOS) |
 | `expo-local-authentication` | Biometric authentication |
 | `expo-secure-store` | Secure credential storage |
 | `expo-image-picker` | Camera and photo library access |
 | `expo-image-manipulator` | Image resize and compression |
+| `expo-haptics` | Haptic feedback |
+| `expo-linking` | Deep linking (required by expo-router) |
+| `expo-device` | Device info for API service |
+| `expo-crypto` | Crypto utilities for social auth |
+| `rn-firebase-chat` | Chat UI with Firestore backend |
 | `zustand` | State management |
 | `axios` | HTTP client with interceptors |

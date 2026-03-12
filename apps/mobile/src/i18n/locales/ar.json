@@ -395,6 +395,12 @@
       "noNotes": "لم يتم تقديم ملاحظات الجلسة"
     },
     "chat": "محادثة",
+    "join": "انضم",
+    "instantCall": "مكالمة فورية",
+    "startsIn": "يبدأ بعد {{time}}",
+    "ratedWith": "تقييم {{rating}}/5",
+    "leaveFeedback": "ترك تقييم",
+    "bookAgain": "حجز مجدداً",
     "empty": {
       "upcoming": "لا توجد مواعيد قادمة",
       "past": "لا توجد مواعيد سابقة",

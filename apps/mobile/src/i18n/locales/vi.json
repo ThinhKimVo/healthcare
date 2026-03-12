@@ -406,6 +406,12 @@
       "noNotes": "Không có ghi chú buổi hẹn"
     },
     "chat": "Nhắn tin",
+    "join": "Tham Gia",
+    "instantCall": "Gọi Ngay",
+    "startsIn": "Bắt đầu sau {{time}}",
+    "ratedWith": "Đánh giá {{rating}}/5",
+    "leaveFeedback": "Để Lại Đánh Giá",
+    "bookAgain": "Đặt Lại",
     "empty": {
       "upcoming": "Không có lịch hẹn sắp tới",
       "past": "Không có lịch hẹn đã qua",
