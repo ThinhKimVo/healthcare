@@ -83,8 +83,6 @@ export default function LoginScreen() {
       await setTokens(response.accessToken, response.refreshToken);
       setUser(response.user);
 
-      const isTherapist = response.user?.role === 'THERAPIST';
-
       // Check if we should offer biometric setup
       const biometricAvailable = await isBiometricAvailable();
       if (biometricAvailable && !hasOfferedBiometric && !biometricEnabled) {
@@ -92,9 +90,8 @@ export default function LoginScreen() {
         // Store credentials temporarily for biometric setup (route params can lose special chars)
         await SecureStore.setItemAsync('temp_biometric_setup', JSON.stringify({ email, password }));
         router.push('/auth/biometric-setup');
-      } else {
-        router.replace(isTherapist ? '/(therapist-tabs)' : '/(tabs)');
       }
+      // Otherwise useProtectedRoute in _layout.tsx handles navigation to correct tabs
     } catch (error: any) {
       Alert.alert(t('common.error'), error.message || t('auth.login.loginFailed'));
     } finally {
@@ -134,7 +131,7 @@ export default function LoginScreen() {
 
       await setTokens(response.accessToken, response.refreshToken);
       setUser(response.user);
-      router.replace(response.user?.role === 'THERAPIST' ? '/(therapist-tabs)' : '/(tabs)');
+      // Navigation is handled by useProtectedRoute in _layout.tsx
     } catch (error: any) {
       Alert.alert(t('auth.login.loginFailed'), t('auth.login.pleaseLoginWithPassword'));
     } finally {
@@ -168,7 +165,7 @@ export default function LoginScreen() {
 
       await setTokens(result.accessToken, result.refreshToken);
       setUser(result.user);
-      router.replace(result.user?.role === 'THERAPIST' ? '/(therapist-tabs)' : '/(tabs)');
+      // Navigation is handled by useProtectedRoute in _layout.tsx
     } catch (error: any) {
       Alert.alert(t('common.error'), error.message || t('auth.login.loginFailed'));
     } finally {
@@ -194,7 +191,7 @@ export default function LoginScreen() {
 
       await setTokens(result.accessToken, result.refreshToken);
       setUser(result.user);
-      router.replace(result.user?.role === 'THERAPIST' ? '/(therapist-tabs)' : '/(tabs)');
+      // Navigation is handled by useProtectedRoute in _layout.tsx
     } catch (error: any) {
       Alert.alert(t('common.error'), error.message || t('auth.login.loginFailed'));
     } finally {

@@ -134,8 +134,7 @@ export default function PhoneVerifyScreen() {
         await setTokens(response.accessToken, response.refreshToken);
         setUser(response.user);
       }
-
-      router.replace(response.user?.role === 'THERAPIST' ? '/(therapist-tabs)' : '/(tabs)');
+      // Navigation is handled by useProtectedRoute in _layout.tsx
     } catch (error: any) {
       console.error('Verification error:', error);
       setAttempts((prev) => prev - 1);
